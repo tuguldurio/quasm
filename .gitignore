@@ -1,4 +1,1 @@
-debug/
-dist/
-.vscode/
-/quasm
+/target

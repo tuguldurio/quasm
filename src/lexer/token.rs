@@ -1,0 +1,92 @@
+use logos::Logos;
+
+
+#[derive(Logos, Debug, PartialEq, Clone)]
+#[logos(skip r"[ \t\r\f]+")]
+#[logos(skip(r"//[^\r\n]*", allow_greedy = true))]
+pub enum TokenKind {
+    #[token("func")]
+    Func,
+
+    #[token("let")]
+    Let,
+
+    #[token("var")]
+    Var,
+
+    #[token("self")]
+    SelfTok,
+
+    #[token("struct")]
+    Struct,
+
+    #[token("type")]
+    Type,
+
+    #[token("interface")]
+    Interface,
+
+    #[token("extend")]
+    Extend,
+
+    #[token("with")]
+    With,
+
+    #[token("if")]
+    If,
+
+    #[token("else")]
+    Else,
+
+    #[token("match")]
+    Match,
+
+    #[token("for")]
+    For,
+
+    #[token("in")]
+    In,
+
+    #[token("while")]
+    While,
+
+    #[token("return")]
+    Return,
+
+    #[token("true")]
+    True,
+
+    #[token("false")]
+    False,
+
+    #[regex(r"[0-9]+", |lex| lex.slice().parse::<i64>().ok())]
+    Int(i64),
+
+    #[regex(r"[a-zA-Z_][a-zA-Z0-9_]*", |lex| lex.slice().to_string())]
+    Ident(String),
+
+    #[token("+")] Plus,
+    #[token("-")] Minus,
+    #[token("*")] Asterisk,
+    #[token("/")] Slash,
+    #[token("==")] EqEq,
+    #[token("!=")] BangEq,
+    #[token("<=")] LtEq,
+    #[token(">=")] GtEq,
+    #[token("<")] Lt,
+    #[token(">")] Gt,
+    #[token("=")] Eq,
+    #[token("(")] LParen,
+    #[token(")")] RParen,
+    #[token("{")] LBrace,
+    #[token("}")] RBrace,
+    #[token(",")] Comma,
+    #[token(":")] Colon,
+    #[token(";")] Semicolon,
+    #[token("=>")] Arrow,
+
+    #[token("\n")]
+    Newline,
+
+    Error
+}
