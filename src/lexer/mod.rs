@@ -20,6 +20,7 @@ pub fn lex(src: &str) -> (Vec<Token>, Vec<LexError>) {
     let mut errors = Vec::new();
 
     let mut lexer = TokenKind::lexer(src);
+    
     while let Some(tok) = lexer.next() {
         let span = lexer.span();
         let literal = lexer.slice().to_string();

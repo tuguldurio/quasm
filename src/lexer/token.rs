@@ -59,12 +59,19 @@ pub enum TokenKind {
     #[token("false")]
     False,
 
+    #[token("and")]
+    And,
+
+    #[token("or")]
+    Or,
+
     #[regex(r"[0-9]+", |lex| lex.slice().parse::<i64>().ok())]
     Int(i64),
 
     #[regex(r"[a-zA-Z_][a-zA-Z0-9_]*", |lex| lex.slice().to_string())]
     Ident(String),
 
+    #[token("!")] Bang,
     #[token("+")] Plus,
     #[token("-")] Minus,
     #[token("*")] Asterisk,
@@ -84,6 +91,7 @@ pub enum TokenKind {
     #[token(":")] Colon,
     #[token(";")] Semicolon,
     #[token("=>")] Arrow,
+    #[token("|")] VerBar,
 
     #[token("\n")]
     Newline,

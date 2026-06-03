@@ -1,0 +1,118 @@
+pub mod ast;
+mod expr;
+
+use crate::lexer::{Token, TokenKind};
+use ast::*;
+
+pub struct Parser {
+    tokens: Vec<Token>,
+    pos: usize,
+}
+
+#[derive(Debug)]
+pub struct ParseError {
+    pub message: String,
+    pub span: Option<std::ops::Range<usize>>,
+}
+
+impl Parser {
+    pub fn new(tokens: Vec<Token>) -> Self {
+        Self { tokens, pos: 0 }
+    }
+
+    fn peek(&self) -> Option<TokenKind> {
+        self.tokens.get(self.pos).map(|t| t.kind.clone())
+    }
+
+    fn advance(&mut self) {
+        if self.pos < self.tokens.len() {
+            self.pos += 1;
+        }
+    }
+
+    fn skip_newlines(&mut self) {
+        while matches!(self.peek(), Some(TokenKind::Newline)) {
+            self.advance();
+        }
+    }
+
+    fn consume(&mut self, expected: TokenKind) -> Result<(), ParseError> {
+        match self.peek() {
+            Some(k) if k == expected => {
+                self.advance();
+                Ok(())
+            }
+            other => Err(self.err(format!("expected {:?}, got {:?}", expected, other))),
+        }
+    }
+
+    fn parse_ident(&mut self) -> Result<String, ParseError> {
+        match self.peek() {
+            Some(TokenKind::Ident(name)) => {
+                self.advance();
+                Ok(name)
+            }
+            other => Err(self.err(format!("expected identifier, got {:?}", other))),
+        }
+    }
+
+    fn current_span(&self) -> Option<std::ops::Range<usize>> {
+        self.tokens.get(self.pos).map(|t| t.span.clone())
+    }
+
+    fn err(&self, msg: impl Into<String>) -> ParseError {
+        ParseError { message: msg.into(), span: self.current_span() }
+    }
+}
+
+impl Parser {
+    pub fn parse_program(&mut self) -> Result<Program, ParseError> {
+        let mut statements = Vec::new();
+        self.skip_newlines();
+
+        while self.peek().is_some() {
+            statements.push(self.parse_statement()?);
+            self.skip_newlines();
+        }
+        
+        Ok(Program { statements })
+    }
+
+    fn parse_statement(&mut self) -> Result<Statement, ParseError> {
+        match self.peek() {
+            Some(TokenKind::Func) => Ok(Statement::FuncStatement(self.parse_func_decl()?)),
+            _ => Ok(Statement::ExpressionStatement(self.parse_expr()?)),
+        }
+    }
+
+    fn parse_func_decl(&mut self) -> Result<FuncDecl, ParseError> {
+        self.consume(TokenKind::Func)?;
+        let name = self.parse_ident()?;
+        self.consume(TokenKind::LParen)?;
+        self.consume(TokenKind::RParen)?;
+        let body = self.parse_block()?;
+        Ok(FuncDecl { name, body })
+    }
+
+    fn parse_block(&mut self) -> Result<Block, ParseError> {
+        self.consume(TokenKind::LBrace)?;
+        let mut stmts = Vec::new();
+        self.skip_newlines();
+
+        while !matches!(self.peek(), Some(TokenKind::RBrace) | None) {
+            stmts.push(self.parse_statement()?);
+
+            match self.peek() {
+                Some(TokenKind::Newline) | Some(TokenKind::RBrace) | None => {}
+                other => {
+                    return Err(self.err(format!("expected newline after statement, got {:?}", other)))
+                }
+            }
+            
+            self.skip_newlines();
+        }
+
+        self.consume(TokenKind::RBrace)?;
+        Ok(Block { stmts })
+    }
+}
