@@ -46,16 +46,6 @@ impl Parser {
         }
     }
 
-    fn parse_ident(&mut self) -> Result<String, ParseError> {
-        match self.peek() {
-            Some(TokenKind::Ident(name)) => {
-                self.advance();
-                Ok(name)
-            }
-            other => Err(self.err(format!("expected identifier, got {:?}", other))),
-        }
-    }
-
     fn current_span(&self) -> Option<std::ops::Range<usize>> {
         self.tokens.get(self.pos).map(|t| t.span.clone())
     }

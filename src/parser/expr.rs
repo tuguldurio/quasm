@@ -104,7 +104,7 @@ impl Parser {
             Some(TokenKind::Bang)  => UnaryOp::Not,
             _ => return self.parse_primary(),
         };
-        
+
         self.advance();
         let operand = self.parse_unary()?;
         Ok(Expression::UnaryOp { op, operand: Box::new(operand) })
@@ -126,7 +126,7 @@ impl Parser {
             }
             Some(TokenKind::LParen) => {
                 self.advance();
-                // newlines after `(` and before `)` are allowed
+                // newlines after '(' and before ')' are allowed
                 self.skip_newlines();
                 let expr = self.parse_expr()?;
                 self.skip_newlines();
