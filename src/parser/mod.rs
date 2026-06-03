@@ -77,7 +77,7 @@ impl Parser {
 
     fn parse_func_decl(&mut self) -> Result<FuncDecl, ParseError> {
         self.consume(TokenKind::Func)?;
-        let name = self.parse_ident()?;
+        let name = self.parse_identifier()?;
         self.consume(TokenKind::LParen)?;
         self.consume(TokenKind::RParen)?;
         let body = self.parse_block()?;
@@ -105,4 +105,5 @@ impl Parser {
         self.consume(TokenKind::RBrace)?;
         Ok(Block { stmts })
     }
+
 }

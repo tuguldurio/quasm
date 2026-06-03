@@ -133,7 +133,18 @@ impl Parser {
                 self.consume(TokenKind::RParen)?;
                 Ok(expr)
             }
+            Some(TokenKind::Identifier(_)) => Ok(Expression::Identifier(self.parse_identifier()?)),
             other => Err(self.err(format!("expected expression, got {:?}", other))),
+        }
+    }
+
+    pub(super) fn parse_identifier(&mut self) -> Result<Identifier, ParseError> {
+        match self.peek() {
+            Some(TokenKind::Identifier(name)) => {
+                self.advance();
+                Ok(Identifier { name })
+            }
+            other => Err(self.err(format!("expected identifier, got {:?}", other))),
         }
     }
 }

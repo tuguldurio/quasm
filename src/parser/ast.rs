@@ -11,7 +11,7 @@ pub enum Statement {
 
 #[derive(Debug)]
 pub struct FuncDecl {
-    pub name: String,
+    pub name: Identifier,
     pub body: Block,
 }
 
@@ -27,9 +27,15 @@ pub struct Block {
 }
 
 #[derive(Debug)]
+pub struct Identifier {
+    pub name: String,
+}
+
+#[derive(Debug)]
 pub enum Expression {
     Int(i64),
     Bool(bool),
+    Identifier(Identifier),
     BinaryOp {
         op: BinOp,
         left: Box<Expression>,
