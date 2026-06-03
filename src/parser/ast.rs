@@ -13,12 +13,14 @@ pub enum Statement {
 #[derive(Debug)]
 pub struct LetStmt {
     pub name: Identifier,
+    pub ty: Option<Identifier>,
     pub value: Expression
 }
 
 #[derive(Debug)]
 pub struct FuncStmt {
     pub name: Identifier,
+    pub ret: Option<Identifier>,
     pub body: Block
 }
 

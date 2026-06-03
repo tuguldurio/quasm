@@ -81,16 +81,26 @@ impl Parser {
         let name = self.parse_identifier()?;
         self.consume(TokenKind::LParen)?;
         self.consume(TokenKind::RParen)?;
+        let ret = self.parse_type_annotation()?;
         let body = self.parse_block()?;
-        Ok(FuncStmt { name, body })
+        Ok(FuncStmt { name, ret, body })
     }
 
     fn parse_let_statement(&mut self) -> Result<LetStmt, ParseError> {
         self.consume(TokenKind::Let)?;
         let name = self.parse_identifier()?;
+        let ty = self.parse_type_annotation()?;
         self.consume(TokenKind::Eq)?;
         let value = self.parse_expr()?;
-        Ok(LetStmt { name, value })
+        Ok(LetStmt { name, ty, value })
+    }
+
+    fn parse_type_annotation(&mut self) -> Result<Option<Identifier>, ParseError> {
+        if self.peek() != Some(TokenKind::Colon) {
+            return Ok(None);
+        }
+        self.advance();
+        Ok(Some(self.parse_identifier()?))
     }
 
     fn parse_block(&mut self) -> Result<Block, ParseError> {
