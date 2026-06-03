@@ -27,14 +27,9 @@ pub struct Block {
 }
 
 #[derive(Debug)]
-pub struct Identifier {
-    pub name: String,
-}
-
-#[derive(Debug)]
 pub enum Expression {
-    Int(i64),
-    Bool(bool),
+    Int(Int),
+    Bool(Bool),
     Identifier(Identifier),
     BinaryOp {
         op: BinOp,
@@ -45,6 +40,21 @@ pub enum Expression {
         op: UnaryOp,
         operand: Box<Expression>,
     },
+}
+
+#[derive(Debug)]
+pub struct Int {
+    pub value: i64,
+}
+
+#[derive(Debug)]
+pub struct Bool {
+    pub value: bool,
+}
+
+#[derive(Debug)]
+pub struct Identifier {
+    pub value: String,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq)]

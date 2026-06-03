@@ -112,17 +112,17 @@ impl Parser {
 
     fn parse_primary(&mut self) -> Result<Expression, ParseError> {
         match self.peek() {
-            Some(TokenKind::Int(n)) => {
+            Some(TokenKind::Int(value)) => {
                 self.advance();
-                Ok(Expression::Int(n))
+                Ok(Expression::Int(Int { value }))
             }
             Some(TokenKind::True) => {
                 self.advance();
-                Ok(Expression::Bool(true))
+                Ok(Expression::Bool(Bool { value: true }))
             }
             Some(TokenKind::False) => {
                 self.advance();
-                Ok(Expression::Bool(false))
+                Ok(Expression::Bool(Bool { value: false }))
             }
             Some(TokenKind::LParen) => {
                 self.advance();
@@ -140,9 +140,9 @@ impl Parser {
 
     pub(super) fn parse_identifier(&mut self) -> Result<Identifier, ParseError> {
         match self.peek() {
-            Some(TokenKind::Identifier(name)) => {
+            Some(TokenKind::Identifier(value)) => {
                 self.advance();
-                Ok(Identifier { name })
+                Ok(Identifier { value })
             }
             other => Err(self.err(format!("expected identifier, got {:?}", other))),
         }
