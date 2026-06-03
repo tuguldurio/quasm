@@ -5,14 +5,21 @@ pub struct Program {
 
 #[derive(Debug)]
 pub enum Statement {
-    FuncStatement(FuncDecl),
-    ExpressionStatement(Expression),
+    Func(FuncStmt),
+    Let(LetStmt),
+    Expression(Expression)
 }
 
 #[derive(Debug)]
-pub struct FuncDecl {
+pub struct LetStmt {
     pub name: Identifier,
-    pub body: Block,
+    pub value: Expression
+}
+
+#[derive(Debug)]
+pub struct FuncStmt {
+    pub name: Identifier,
+    pub body: Block
 }
 
 #[derive(Debug)]
@@ -23,13 +30,13 @@ pub struct Param {
 // Statements in a block are newline-separated; the last Stmt::Expr is the implicit return value.
 #[derive(Debug)]
 pub struct Block {
-    pub stmts: Vec<Statement>,
+    pub stmts: Vec<Statement>
 }
 
 #[derive(Debug)]
 pub enum Expression {
-    Int(Int),
-    Bool(Bool),
+    Int(IntLit),
+    Bool(BoolLit),
     Identifier(Identifier),
     BinaryOp {
         op: BinOp,
@@ -39,22 +46,22 @@ pub enum Expression {
     UnaryOp {
         op: UnaryOp,
         operand: Box<Expression>,
-    },
+    }
 }
 
 #[derive(Debug)]
-pub struct Int {
+pub struct IntLit {
     pub value: i64,
 }
 
 #[derive(Debug)]
-pub struct Bool {
-    pub value: bool,
+pub struct BoolLit {
+    pub value: bool
 }
 
 #[derive(Debug)]
 pub struct Identifier {
-    pub value: String,
+    pub value: String
 }
 
 #[derive(Debug, Clone, Copy, PartialEq)]
@@ -66,11 +73,11 @@ pub enum BinOp {
     // equality
     EqEq, NotEq,
     // logical
-    And, Or,
+    And, Or
 }
 
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub enum UnaryOp {
-    Neg, // -x
-    Not, // !x
+    Neg,
+    Not
 }

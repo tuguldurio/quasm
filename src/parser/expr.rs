@@ -38,7 +38,7 @@ impl Parser {
             let op = match self.peek() {
                 Some(TokenKind::EqEq)   => BinOp::EqEq,
                 Some(TokenKind::BangEq) => BinOp::NotEq,
-                _ => break,
+                _ => break
             };
             self.advance();
             let right = self.parse_comparison()?;
@@ -55,7 +55,7 @@ impl Parser {
                 Some(TokenKind::Gt)   => BinOp::Gt,
                 Some(TokenKind::LtEq) => BinOp::LtEq,
                 Some(TokenKind::GtEq) => BinOp::GtEq,
-                _ => break,
+                _ => break
             };
             self.advance();
             let right = self.parse_additive()?;
@@ -102,7 +102,7 @@ impl Parser {
         let op = match self.peek() {
             Some(TokenKind::Minus) => UnaryOp::Neg,
             Some(TokenKind::Bang)  => UnaryOp::Not,
-            _ => return self.parse_primary(),
+            _ => return self.parse_primary()
         };
 
         self.advance();
@@ -114,15 +114,15 @@ impl Parser {
         match self.peek() {
             Some(TokenKind::Int(value)) => {
                 self.advance();
-                Ok(Expression::Int(Int { value }))
+                Ok(Expression::Int(IntLit { value }))
             }
             Some(TokenKind::True) => {
                 self.advance();
-                Ok(Expression::Bool(Bool { value: true }))
+                Ok(Expression::Bool(BoolLit { value: true }))
             }
             Some(TokenKind::False) => {
                 self.advance();
-                Ok(Expression::Bool(Bool { value: false }))
+                Ok(Expression::Bool(BoolLit { value: false }))
             }
             Some(TokenKind::LParen) => {
                 self.advance();
@@ -134,7 +134,7 @@ impl Parser {
                 Ok(expr)
             }
             Some(TokenKind::Identifier(_)) => Ok(Expression::Identifier(self.parse_identifier()?)),
-            other => Err(self.err(format!("expected expression, got {:?}", other))),
+            other => Err(self.err(format!("expected expression, got {:?}", other)))
         }
     }
 
@@ -144,7 +144,7 @@ impl Parser {
                 self.advance();
                 Ok(Identifier { value })
             }
-            other => Err(self.err(format!("expected identifier, got {:?}", other))),
+            other => Err(self.err(format!("expected identifier, got {:?}", other)))
         }
     }
 }

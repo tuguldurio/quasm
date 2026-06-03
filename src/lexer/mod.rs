@@ -7,12 +7,12 @@ use logos::Logos;
 pub struct Token {
     pub kind: TokenKind,
     pub literal: String,
-    pub span: std::ops::Range<usize>,
+    pub span: std::ops::Range<usize>
 }
 
 pub struct LexError {
     pub span: std::ops::Range<usize>,
-    pub message: String,
+    pub message: String
 }
 
 pub fn lex(src: &str) -> (Vec<Token>, Vec<LexError>) {
@@ -34,7 +34,7 @@ pub fn lex(src: &str) -> (Vec<Token>, Vec<LexError>) {
             Err(_) => errors.push(LexError {
                 span,
                 message: format!("`{}`", literal)
-            }),
+            })
         }
     }
 

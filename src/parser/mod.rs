@@ -6,13 +6,13 @@ use ast::*;
 
 pub struct Parser {
     tokens: Vec<Token>,
-    pos: usize,
+    pos: usize
 }
 
 #[derive(Debug)]
 pub struct ParseError {
     pub message: String,
-    pub span: Option<std::ops::Range<usize>>,
+    pub span: Option<std::ops::Range<usize>>
 }
 
 impl Parser {
@@ -70,18 +70,27 @@ impl Parser {
 
     fn parse_statement(&mut self) -> Result<Statement, ParseError> {
         match self.peek() {
-            Some(TokenKind::Func) => Ok(Statement::FuncStatement(self.parse_func_decl()?)),
-            _ => Ok(Statement::ExpressionStatement(self.parse_expr()?)),
+            Some(TokenKind::Func) => Ok(Statement::Func(self.parse_func_decl()?)),
+            Some(TokenKind::Let) => Ok(Statement::Let(self.parse_let_statement()?)),
+            _ => Ok(Statement::Expression(self.parse_expr()?)),
         }
     }
 
-    fn parse_func_decl(&mut self) -> Result<FuncDecl, ParseError> {
+    fn parse_func_decl(&mut self) -> Result<FuncStmt, ParseError> {
         self.consume(TokenKind::Func)?;
         let name = self.parse_identifier()?;
         self.consume(TokenKind::LParen)?;
         self.consume(TokenKind::RParen)?;
         let body = self.parse_block()?;
-        Ok(FuncDecl { name, body })
+        Ok(FuncStmt { name, body })
+    }
+
+    fn parse_let_statement(&mut self) -> Result<LetStmt, ParseError> {
+        self.consume(TokenKind::Let)?;
+        let name = self.parse_identifier()?;
+        self.consume(TokenKind::Eq)?;
+        let value = self.parse_expr()?;
+        Ok(LetStmt { name, value })
     }
 
     fn parse_block(&mut self) -> Result<Block, ParseError> {

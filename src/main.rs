@@ -6,7 +6,7 @@ use std::{fs, path::PathBuf};
 struct Args {
     file: PathBuf,
     #[arg(short = 'd', long = "debug")]
-    debug: bool,
+    debug: bool
 }
 
 fn main() {
