@@ -1,0 +1,14 @@
+enum Maybe(a) {
+    Just(a)
+    None
+}
+
+enum Either(a, b) {
+    Left(a)
+    Right(b)
+}
+
+enum Result(t, e) {
+    Ok(t)
+    Error(e)
+}
