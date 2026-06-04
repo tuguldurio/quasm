@@ -79,11 +79,31 @@ impl Parser {
     fn parse_func_decl(&mut self) -> Result<FuncStmt, ParseError> {
         self.consume(TokenKind::Func)?;
         let name = self.parse_identifier()?;
-        self.consume(TokenKind::LParen)?;
-        self.consume(TokenKind::RParen)?;
+        let params = self.parse_params()?;
         let ret = self.parse_type_annotation()?;
         let body = self.parse_block()?;
-        Ok(FuncStmt { name, ret, body })
+        Ok(FuncStmt { name, params, ret, body })
+    }
+
+    fn parse_params(&mut self) -> Result<Vec<Param>, ParseError> {
+        self.consume(TokenKind::LParen)?;
+        let mut params = Vec::new();
+
+        while !matches!(self.peek(), Some(TokenKind::RParen) | None) {
+            let name = self.parse_identifier()?;
+            let ty = self.parse_type_annotation()?
+                .ok_or_else(|| self.err("expected type annotation for parameter"))?;
+            params.push(Param { name, ty });
+
+            if self.peek() == Some(TokenKind::Comma) {
+                self.advance();
+            } else {
+                break;
+            }
+        }
+
+        self.consume(TokenKind::RParen)?;
+        Ok(params)
     }
 
     fn parse_let_statement(&mut self) -> Result<LetStmt, ParseError> {

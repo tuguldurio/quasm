@@ -20,13 +20,15 @@ pub struct LetStmt {
 #[derive(Debug)]
 pub struct FuncStmt {
     pub name: Identifier,
+    pub params: Vec<Param>,
     pub ret: Option<Identifier>,
     pub body: Block
 }
 
 #[derive(Debug)]
 pub struct Param {
-    pub name: String
+    pub name: Identifier,
+    pub ty: Identifier,
 }
 
 // Statements in a block are newline-separated; the last Stmt::Expr is the implicit return value.
@@ -40,6 +42,10 @@ pub enum Expression {
     Int(IntLit),
     Bool(BoolLit),
     Identifier(Identifier),
+    Call {
+        callee: Identifier,
+        args: Vec<Expression>,
+    },
     BinaryOp {
         op: BinOp,
         left: Box<Expression>,

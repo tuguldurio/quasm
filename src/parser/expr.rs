@@ -133,9 +133,34 @@ impl Parser {
                 self.consume(TokenKind::RParen)?;
                 Ok(expr)
             }
-            Some(TokenKind::Identifier(_)) => Ok(Expression::Identifier(self.parse_identifier()?)),
+            Some(TokenKind::Identifier(_)) => {
+                let ident = self.parse_identifier()?;
+                if self.peek() == Some(TokenKind::LParen) {
+                    let args = self.parse_call_args()?;
+                    Ok(Expression::Call { callee: ident, args })
+                } else {
+                    Ok(Expression::Identifier(ident))
+                }
+            }
             other => Err(self.err(format!("expected expression, got {:?}", other)))
         }
+    }
+
+    fn parse_call_args(&mut self) -> Result<Vec<Expression>, ParseError> {
+        self.consume(TokenKind::LParen)?;
+        let mut args = Vec::new();
+
+        while !matches!(self.peek(), Some(TokenKind::RParen) | None) {
+            args.push(self.parse_expr()?);
+            if self.peek() == Some(TokenKind::Comma) {
+                self.advance();
+            } else {
+                break;
+            }
+        }
+
+        self.consume(TokenKind::RParen)?;
+        Ok(args)
     }
 
     pub(super) fn parse_identifier(&mut self) -> Result<Identifier, ParseError> {
