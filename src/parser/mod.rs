@@ -20,8 +20,8 @@ impl Parser {
         Self { tokens, pos: 0 }
     }
 
-    fn peek(&self) -> Option<TokenKind> {
-        self.tokens.get(self.pos).map(|t| t.kind.clone())
+    fn peek(&self) -> TokenKind {
+        self.tokens.get(self.pos).map(|t| t.kind.clone()).unwrap_or(TokenKind::Eof)
     }
 
     fn advance(&mut self) {
@@ -31,18 +31,18 @@ impl Parser {
     }
 
     fn skip_newlines(&mut self) {
-        while matches!(self.peek(), Some(TokenKind::Newline)) {
+        while matches!(self.peek(), TokenKind::Newline) {
             self.advance();
         }
     }
 
     fn consume(&mut self, expected: TokenKind) -> Result<(), ParseError> {
-        match self.peek() {
-            Some(k) if k == expected => {
-                self.advance();
-                Ok(())
-            }
-            other => Err(self.err(format!("expected {:?}, got {:?}", expected, other))),
+        let k = self.peek();
+        if k == expected {
+            self.advance();
+            Ok(())
+        } else {
+            Err(self.err(format!("expected {:?}, got {:?}", expected, k)))
         }
     }
 
@@ -60,7 +60,7 @@ impl Parser {
         let mut statements = Vec::new();
         self.skip_newlines();
 
-        while self.peek().is_some() {
+        while self.peek() != TokenKind::Eof {
             statements.push(self.parse_statement()?);
             self.skip_newlines();
         }
@@ -70,8 +70,8 @@ impl Parser {
 
     fn parse_statement(&mut self) -> Result<Statement, ParseError> {
         match self.peek() {
-            Some(TokenKind::Func) => Ok(Statement::Func(self.parse_func_decl()?)),
-            Some(TokenKind::Let) => Ok(Statement::Let(self.parse_let_statement()?)),
+            TokenKind::Func => Ok(Statement::Func(self.parse_func_decl()?)),
+            TokenKind::Let => Ok(Statement::Let(self.parse_let_statement()?)),
             _ => Ok(Statement::Expression(self.parse_expr()?)),
         }
     }
@@ -89,13 +89,13 @@ impl Parser {
         self.consume(TokenKind::LParen)?;
         let mut params = Vec::new();
 
-        while !matches!(self.peek(), Some(TokenKind::RParen) | None) {
+        while !matches!(self.peek(), TokenKind::RParen | TokenKind::Eof) {
             let name = self.parse_identifier()?;
             let ty = self.parse_type_annotation()?
                 .ok_or_else(|| self.err("expected type annotation for parameter"))?;
             params.push(Param { name, ty });
 
-            if self.peek() == Some(TokenKind::Comma) {
+            if self.peek() == TokenKind::Comma {
                 self.advance();
             } else {
                 break;
@@ -116,7 +116,7 @@ impl Parser {
     }
 
     fn parse_type_annotation(&mut self) -> Result<Option<Identifier>, ParseError> {
-        if self.peek() != Some(TokenKind::Colon) {
+        if self.peek() != TokenKind::Colon {
             return Ok(None);
         }
         self.advance();
@@ -128,11 +128,11 @@ impl Parser {
         let mut stmts = Vec::new();
         self.skip_newlines();
 
-        while !matches!(self.peek(), Some(TokenKind::RBrace) | None) {
+        while !matches!(self.peek(), TokenKind::RBrace | TokenKind::Eof) {
             stmts.push(self.parse_statement()?);
 
             match self.peek() {
-                Some(TokenKind::Newline) | Some(TokenKind::RBrace) | None => {}
+                TokenKind::Newline | TokenKind::RBrace | TokenKind::Eof => {}
                 other => {
                     return Err(self.err(format!("expected newline after statement, got {:?}", other)))
                 }

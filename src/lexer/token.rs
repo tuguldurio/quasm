@@ -96,5 +96,6 @@ pub enum TokenKind {
     #[token("\n")]
     Newline,
 
+    Eof,
     Error
 }

@@ -11,7 +11,7 @@ impl Parser {
     fn parse_or(&mut self) -> Result<Expression, ParseError> {
         let mut left = self.parse_and()?;
 
-        while matches!(self.peek(), Some(TokenKind::Or)) {
+        while matches!(self.peek(), TokenKind::Or) {
             self.advance();
             let right = self.parse_and()?;
             left = Expression::BinaryOp { op: BinOp::Or, left: Box::new(left), right: Box::new(right) };
@@ -23,7 +23,7 @@ impl Parser {
     fn parse_and(&mut self) -> Result<Expression, ParseError> {
         let mut left = self.parse_equality()?;
 
-        while matches!(self.peek(), Some(TokenKind::And)) {
+        while matches!(self.peek(), TokenKind::And) {
             self.advance();
             let right = self.parse_equality()?;
             left = Expression::BinaryOp { op: BinOp::And, left: Box::new(left), right: Box::new(right) };
@@ -36,8 +36,8 @@ impl Parser {
         let mut left = self.parse_comparison()?;
         loop {
             let op = match self.peek() {
-                Some(TokenKind::EqEq)   => BinOp::EqEq,
-                Some(TokenKind::BangEq) => BinOp::NotEq,
+                TokenKind::EqEq   => BinOp::EqEq,
+                TokenKind::BangEq => BinOp::NotEq,
                 _ => break
             };
             self.advance();
@@ -51,10 +51,10 @@ impl Parser {
         let mut left = self.parse_additive()?;
         loop {
             let op = match self.peek() {
-                Some(TokenKind::Lt)   => BinOp::Lt,
-                Some(TokenKind::Gt)   => BinOp::Gt,
-                Some(TokenKind::LtEq) => BinOp::LtEq,
-                Some(TokenKind::GtEq) => BinOp::GtEq,
+                TokenKind::Lt   => BinOp::Lt,
+                TokenKind::Gt   => BinOp::Gt,
+                TokenKind::LtEq => BinOp::LtEq,
+                TokenKind::GtEq => BinOp::GtEq,
                 _ => break
             };
             self.advance();
@@ -69,8 +69,8 @@ impl Parser {
 
         loop {
             let op = match self.peek() {
-                Some(TokenKind::Plus)  => BinOp::Add,
-                Some(TokenKind::Minus) => BinOp::Sub,
+                TokenKind::Plus  => BinOp::Add,
+                TokenKind::Minus => BinOp::Sub,
                 _ => break,
             };
             self.advance();
@@ -86,8 +86,8 @@ impl Parser {
         
         loop {
             let op = match self.peek() {
-                Some(TokenKind::Asterisk) => BinOp::Mul,
-                Some(TokenKind::Slash)    => BinOp::Div,
+                TokenKind::Asterisk => BinOp::Mul,
+                TokenKind::Slash    => BinOp::Div,
                 _ => break,
             };
             self.advance();
@@ -100,8 +100,8 @@ impl Parser {
 
     fn parse_unary(&mut self) -> Result<Expression, ParseError> {
         let op = match self.peek() {
-            Some(TokenKind::Minus) => UnaryOp::Neg,
-            Some(TokenKind::Bang)  => UnaryOp::Not,
+            TokenKind::Minus => UnaryOp::Neg,
+            TokenKind::Bang  => UnaryOp::Not,
             _ => return self.parse_primary()
         };
 
@@ -112,19 +112,19 @@ impl Parser {
 
     fn parse_primary(&mut self) -> Result<Expression, ParseError> {
         match self.peek() {
-            Some(TokenKind::Int(value)) => {
+            TokenKind::Int(value) => {
                 self.advance();
                 Ok(Expression::Int(IntLit { value }))
             }
-            Some(TokenKind::True) => {
+            TokenKind::True => {
                 self.advance();
                 Ok(Expression::Bool(BoolLit { value: true }))
             }
-            Some(TokenKind::False) => {
+            TokenKind::False => {
                 self.advance();
                 Ok(Expression::Bool(BoolLit { value: false }))
             }
-            Some(TokenKind::LParen) => {
+            TokenKind::LParen => {
                 self.advance();
                 // newlines after '(' and before ')' are allowed
                 self.skip_newlines();
@@ -133,9 +133,9 @@ impl Parser {
                 self.consume(TokenKind::RParen)?;
                 Ok(expr)
             }
-            Some(TokenKind::Identifier(_)) => {
+            TokenKind::Identifier(_) => {
                 let ident = self.parse_identifier()?;
-                if self.peek() == Some(TokenKind::LParen) {
+                if self.peek() == TokenKind::LParen {
                     let args = self.parse_call_args()?;
                     Ok(Expression::Call { callee: ident, args })
                 } else {
@@ -150,9 +150,9 @@ impl Parser {
         self.consume(TokenKind::LParen)?;
         let mut args = Vec::new();
 
-        while !matches!(self.peek(), Some(TokenKind::RParen) | None) {
+        while !matches!(self.peek(), TokenKind::RParen | TokenKind::Eof) {
             args.push(self.parse_expr()?);
-            if self.peek() == Some(TokenKind::Comma) {
+            if self.peek() == TokenKind::Comma {
                 self.advance();
             } else {
                 break;
@@ -165,7 +165,7 @@ impl Parser {
 
     pub(super) fn parse_identifier(&mut self) -> Result<Identifier, ParseError> {
         match self.peek() {
-            Some(TokenKind::Identifier(value)) => {
+            TokenKind::Identifier(value) => {
                 self.advance();
                 Ok(Identifier { value })
             }
