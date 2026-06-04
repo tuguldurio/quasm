@@ -11,7 +11,7 @@ impl Parser {
     fn parse_or(&mut self) -> Result<Expression, ParseError> {
         let mut left = self.parse_and()?;
 
-        while matches!(self.peek(), TokenKind::Or) {
+        while self.peek_is(TokenKind::Or) {
             self.advance();
             let right = self.parse_and()?;
             left = Expression::BinaryOp { op: BinOp::Or, left: Box::new(left), right: Box::new(right) };
@@ -23,7 +23,7 @@ impl Parser {
     fn parse_and(&mut self) -> Result<Expression, ParseError> {
         let mut left = self.parse_equality()?;
 
-        while matches!(self.peek(), TokenKind::And) {
+        while self.peek_is(TokenKind::And) {
             self.advance();
             let right = self.parse_equality()?;
             left = Expression::BinaryOp { op: BinOp::And, left: Box::new(left), right: Box::new(right) };

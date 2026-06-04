@@ -30,8 +30,12 @@ impl Parser {
         }
     }
 
+    fn peek_is(&self, kind: TokenKind) -> bool {
+        self.peek() == kind
+    }
+
     fn skip_newlines(&mut self) {
-        while matches!(self.peek(), TokenKind::Newline) {
+        while self.peek_is(TokenKind::Newline) {
             self.advance();
         }
     }
