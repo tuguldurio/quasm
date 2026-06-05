@@ -77,7 +77,7 @@ pub struct Identifier {
 #[derive(Debug)]
 pub struct EnumStmt {
     pub name: Identifier,
-    pub type_params: Vec<Identifier>,
+    pub ty_params: Vec<Identifier>,
     pub variants: Vec<EnumVariant>
 }
 

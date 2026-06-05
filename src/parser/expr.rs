@@ -36,7 +36,7 @@ impl Parser {
         let mut left = self.parse_comparison()?;
         loop {
             let op = match self.peek() {
-                TokenKind::EqEq   => BinOp::EqEq,
+                TokenKind::EqEq => BinOp::EqEq,
                 TokenKind::BangEq => BinOp::NotEq,
                 _ => break
             };
@@ -51,8 +51,8 @@ impl Parser {
         let mut left = self.parse_additive()?;
         loop {
             let op = match self.peek() {
-                TokenKind::Lt   => BinOp::Lt,
-                TokenKind::Gt   => BinOp::Gt,
+                TokenKind::Lt => BinOp::Lt,
+                TokenKind::Gt => BinOp::Gt,
                 TokenKind::LtEq => BinOp::LtEq,
                 TokenKind::GtEq => BinOp::GtEq,
                 _ => break
@@ -69,7 +69,7 @@ impl Parser {
 
         loop {
             let op = match self.peek() {
-                TokenKind::Plus  => BinOp::Add,
+                TokenKind::Plus => BinOp::Add,
                 TokenKind::Minus => BinOp::Sub,
                 _ => break,
             };
@@ -87,7 +87,7 @@ impl Parser {
         loop {
             let op = match self.peek() {
                 TokenKind::Asterisk => BinOp::Mul,
-                TokenKind::Slash    => BinOp::Div,
+                TokenKind::Slash => BinOp::Div,
                 _ => break,
             };
             self.advance();
@@ -101,7 +101,7 @@ impl Parser {
     fn parse_unary(&mut self) -> Result<Expr, ParseError> {
         let op = match self.peek() {
             TokenKind::Minus => UnaryOp::Neg,
-            TokenKind::Bang  => UnaryOp::Not,
+            TokenKind::Bang => UnaryOp::Not,
             _ => return self.parse_primary()
         };
 
@@ -135,7 +135,7 @@ impl Parser {
             }
             TokenKind::Identifier(_) => {
                 let ident = self.parse_identifier()?;
-                if self.peek() == TokenKind::LParen {
+                if self.peek_is(TokenKind::LParen) {
                     let args = self.parse_call_args()?;
                     Ok(Expr::Call { callee: ident, args })
                 } else {
@@ -150,13 +150,12 @@ impl Parser {
         self.consume(TokenKind::LParen)?;
         let mut args = Vec::new();
 
-        while !matches!(self.peek(), TokenKind::RParen | TokenKind::Eof) {
+        while self.peek_until(TokenKind::RParen) {
             args.push(self.parse_expr()?);
-            if self.peek() == TokenKind::Comma {
-                self.advance();
-            } else {
+            if !self.peek_is(TokenKind::Comma) {
                 break;
             }
+            self.advance();
         }
 
         self.consume(TokenKind::RParen)?;

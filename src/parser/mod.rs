@@ -34,7 +34,11 @@ impl Parser {
         self.peek() == kind
     }
 
-fn skip_newlines(&mut self) {
+    fn peek_until(&self, kind: TokenKind) -> bool {
+        !self.peek_is(TokenKind::Eof) && !self.peek_is(kind)
+    }
+
+    fn skip_newlines(&mut self) {
         while self.peek_is(TokenKind::Newline) {
             self.advance();
         }
@@ -57,6 +61,15 @@ fn skip_newlines(&mut self) {
     fn err(&self, msg: impl Into<String>) -> ParseError {
         ParseError { message: msg.into(), span: self.current_span() }
     }
+
+    fn expect_newline(&mut self, context: &str) -> Result<(), ParseError> {
+        match self.peek() {
+            TokenKind::Newline | TokenKind::RBrace | TokenKind::Eof => {}
+            other => return Err(self.err(format!("expected newline after {}, got {:?}", context, other)))
+        }
+        self.skip_newlines();
+        Ok(())
+    }
 }
 
 impl Parser {
@@ -64,7 +77,7 @@ impl Parser {
         let mut statements = Vec::new();
         self.skip_newlines();
 
-        while self.peek() != TokenKind::Eof {
+        while !self.peek_is(TokenKind::Eof) {
             statements.push(self.parse_statement()?);
             self.skip_newlines();
         }
@@ -74,9 +87,9 @@ impl Parser {
 
     fn parse_statement(&mut self) -> Result<Stmt, ParseError> {
         match self.peek() {
-            TokenKind::Func   => Ok(Stmt::Func(self.parse_func_decl()?)),
-            TokenKind::Let    => Ok(Stmt::Let(self.parse_let_statement()?)),
-            TokenKind::Enum   => Ok(Stmt::Enum(self.parse_enum_decl()?)),
+            TokenKind::Func => Ok(Stmt::Func(self.parse_func_decl()?)),
+            TokenKind::Let => Ok(Stmt::Let(self.parse_let_statement()?)),
+            TokenKind::Enum => Ok(Stmt::Enum(self.parse_enum_decl()?)),
             TokenKind::Struct => Ok(Stmt::Struct(self.parse_struct_decl()?)),
             _ => Ok(Stmt::Expr(self.parse_expr()?)),
         }
@@ -95,17 +108,16 @@ impl Parser {
         self.consume(TokenKind::LParen)?;
         let mut params = Vec::new();
 
-        while !matches!(self.peek(), TokenKind::RParen | TokenKind::Eof) {
+        while self.peek_until(TokenKind::RParen) {
             let name = self.parse_identifier()?;
             let ty = self.parse_type_annotation()?
                 .ok_or_else(|| self.err("expected type annotation for parameter"))?;
             params.push(Param { name, ty });
 
-            if self.peek() == TokenKind::Comma {
-                self.advance();
-            } else {
+            if self.peek_is(TokenKind::Comma) {
                 break;
             }
+            self.advance();
         }
 
         self.consume(TokenKind::RParen)?;
@@ -121,20 +133,88 @@ impl Parser {
         Ok(LetStmt { name, ty, value })
     }
 
-    fn parse_enum_decl(&self) -> Result<EnumStmt, ParseError> {
-        Err(self.err("NOT IMPLEMENTED YET"))
+    fn parse_enum_decl(&mut self) -> Result<EnumStmt, ParseError> {
+        self.consume(TokenKind::Enum)?;
+        let name = self.parse_identifier()?;
+
+        let mut ty_params = Vec::new();
+        if self.peek_is(TokenKind::LParen) {
+            self.advance();
+            while self.peek_until(TokenKind::RParen) {
+                ty_params.push(self.parse_identifier()?);
+                if !self.peek_is(TokenKind::Comma) {
+                    break;
+                }
+                self.advance();
+            }
+            self.consume(TokenKind::RParen)?;
+        }
+
+        self.consume(TokenKind::LBrace)?;
+        self.skip_newlines();
+
+        let mut variants = Vec::new();
+        while self.peek_until(TokenKind::RBrace) {
+            variants.push(self.parse_enum_variant()?);
+            self.expect_newline("variant")?;
+        }
+
+        self.consume(TokenKind::RBrace)?;
+        Ok(EnumStmt { name, ty_params, variants })
     }
 
-    fn parse_struct_decl(&self) -> Result<StructStmt, ParseError> {
-        Err(self.err("NOT IMPLEMENTED YET"))
+    fn parse_enum_variant(&mut self) -> Result<EnumVariant, ParseError> {
+        let name = self.parse_identifier()?;
+
+        let mut ty_fields = Vec::new();
+        if self.peek_is(TokenKind::LParen) {
+            self.advance();
+            while self.peek_until(TokenKind::RParen) {
+                ty_fields.push(self.parse_identifier()?);
+
+                if !self.peek_is(TokenKind::Comma) {
+                    break;
+                }
+                self.advance();
+            }
+            self.consume(TokenKind::RParen)?;
+        }
+
+        Ok(EnumVariant { name, ty_fields })
+    }
+
+    fn parse_struct_decl(&mut self) -> Result<StructStmt, ParseError> {
+        self.consume(TokenKind::Struct)?;
+        let name = self.parse_identifier()?;
+        self.consume(TokenKind::LBrace)?;
+        self.skip_newlines();
+
+        let mut fields = Vec::new();
+        while self.peek_until(TokenKind::RBrace) {
+            fields.push(self.parse_struct_field()?);
+            self.expect_newline("field")?;
+        }
+
+        self.consume(TokenKind::RBrace)?;
+        Ok(StructStmt { name, fields })
+    }
+
+    fn parse_struct_field(&mut self) -> Result<StructField, ParseError> {
+        let name = self.parse_identifier()?;
+        self.consume(TokenKind::Colon)?;
+        let ty = self.parse_identifier()?;
+        Ok(StructField { name, ty })
     }
 
     fn parse_type_annotation(&mut self) -> Result<Option<Identifier>, ParseError> {
-        if self.peek() != TokenKind::Colon {
+        if !self.peek_is(TokenKind::Colon) {
             return Ok(None);
         }
         self.advance();
-        Ok(Some(self.parse_identifier()?))
+        match self.peek() {
+            TokenKind::Identifier(_) => Ok(Some(self.parse_identifier()?)),
+            other => Err(self.err(format!("expected type name after ':', got {:?}", other)))
+        }
     }
 
     fn parse_block(&mut self) -> Result<Block, ParseError> {
@@ -142,18 +222,12 @@ impl Parser {
         let mut stmts = Vec::new();
         self.skip_newlines();
 
-        while !matches!(self.peek(), TokenKind::RBrace | TokenKind::Eof) {
+        while self.peek_until(TokenKind::RBrace) {
             stmts.push(self.parse_statement()?);
-
-            if !matches!(self.peek(), TokenKind::Newline | TokenKind::RBrace | TokenKind::Eof) {
-                return Err(self.err(format!("expected newline after statement, got {:?}", self.peek())));
-            }
-            
-            self.skip_newlines();
+            self.expect_newline("statement")?;
         }
 
         self.consume(TokenKind::RBrace)?;
         Ok(Block { stmts })
     }
-
 }
