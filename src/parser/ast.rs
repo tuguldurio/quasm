@@ -1,20 +1,22 @@
 #[derive(Debug)]
 pub struct Program {
-    pub statements: Vec<Statement>
+    pub statements: Vec<Stmt>
 }
 
 #[derive(Debug)]
-pub enum Statement {
+pub enum Stmt {
     Func(FuncStmt),
     Let(LetStmt),
-    Expression(Expression)
+    Enum(EnumStmt),
+    Struct(StructStmt),
+    Expr(Expr)
 }
 
 #[derive(Debug)]
 pub struct LetStmt {
     pub name: Identifier,
     pub ty: Option<Identifier>,
-    pub value: Expression
+    pub value: Expr
 }
 
 #[derive(Debug)]
@@ -28,38 +30,38 @@ pub struct FuncStmt {
 #[derive(Debug)]
 pub struct Param {
     pub name: Identifier,
-    pub ty: Identifier,
+    pub ty: Identifier
 }
 
 // Statements in a block are newline-separated; the last Stmt::Expr is the implicit return value.
 #[derive(Debug)]
 pub struct Block {
-    pub stmts: Vec<Statement>
+    pub stmts: Vec<Stmt>
 }
 
 #[derive(Debug)]
-pub enum Expression {
+pub enum Expr {
     Int(IntLit),
     Bool(BoolLit),
     Identifier(Identifier),
     Call {
         callee: Identifier,
-        args: Vec<Expression>,
+        args: Vec<Expr>
     },
     BinaryOp {
         op: BinOp,
-        left: Box<Expression>,
-        right: Box<Expression>,
+        left: Box<Expr>,
+        right: Box<Expr>
     },
     UnaryOp {
         op: UnaryOp,
-        operand: Box<Expression>,
+        operand: Box<Expr>
     }
 }
 
 #[derive(Debug)]
 pub struct IntLit {
-    pub value: i64,
+    pub value: i64
 }
 
 #[derive(Debug)]
@@ -70,6 +72,31 @@ pub struct BoolLit {
 #[derive(Debug)]
 pub struct Identifier {
     pub value: String
+}
+
+#[derive(Debug)]
+pub struct EnumStmt {
+    pub name: Identifier,
+    pub type_params: Vec<Identifier>,
+    pub variants: Vec<EnumVariant>
+}
+
+#[derive(Debug)]
+pub struct EnumVariant {
+    pub name: Identifier,
+    pub ty_fields: Vec<Identifier>
+}
+
+#[derive(Debug)]
+pub struct StructStmt {
+    pub name: Identifier,
+    pub fields: Vec<StructField>
+}
+
+#[derive(Debug)]
+pub struct StructField {
+    pub name: Identifier,
+    pub ty: Identifier
 }
 
 #[derive(Debug, Clone, Copy, PartialEq)]

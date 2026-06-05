@@ -34,7 +34,7 @@ impl Parser {
         self.peek() == kind
     }
 
-    fn skip_newlines(&mut self) {
+fn skip_newlines(&mut self) {
         while self.peek_is(TokenKind::Newline) {
             self.advance();
         }
@@ -72,11 +72,13 @@ impl Parser {
         Ok(Program { statements })
     }
 
-    fn parse_statement(&mut self) -> Result<Statement, ParseError> {
+    fn parse_statement(&mut self) -> Result<Stmt, ParseError> {
         match self.peek() {
-            TokenKind::Func => Ok(Statement::Func(self.parse_func_decl()?)),
-            TokenKind::Let => Ok(Statement::Let(self.parse_let_statement()?)),
-            _ => Ok(Statement::Expression(self.parse_expr()?)),
+            TokenKind::Func   => Ok(Stmt::Func(self.parse_func_decl()?)),
+            TokenKind::Let    => Ok(Stmt::Let(self.parse_let_statement()?)),
+            TokenKind::Enum   => Ok(Stmt::Enum(self.parse_enum_decl()?)),
+            TokenKind::Struct => Ok(Stmt::Struct(self.parse_struct_decl()?)),
+            _ => Ok(Stmt::Expr(self.parse_expr()?)),
         }
     }
 
@@ -119,6 +121,14 @@ impl Parser {
         Ok(LetStmt { name, ty, value })
     }
 
+    fn parse_enum_decl(&self) -> Result<EnumStmt, ParseError> {
+        Err(self.err("NOT IMPLEMENTED YET"))
+    }
+
+    fn parse_struct_decl(&self) -> Result<StructStmt, ParseError> {
+        Err(self.err("NOT IMPLEMENTED YET"))
+    }
+
     fn parse_type_annotation(&mut self) -> Result<Option<Identifier>, ParseError> {
         if self.peek() != TokenKind::Colon {
             return Ok(None);
@@ -135,11 +145,8 @@ impl Parser {
         while !matches!(self.peek(), TokenKind::RBrace | TokenKind::Eof) {
             stmts.push(self.parse_statement()?);
 
-            match self.peek() {
-                TokenKind::Newline | TokenKind::RBrace | TokenKind::Eof => {}
-                other => {
-                    return Err(self.err(format!("expected newline after statement, got {:?}", other)))
-                }
+            if !matches!(self.peek(), TokenKind::Newline | TokenKind::RBrace | TokenKind::Eof) {
+                return Err(self.err(format!("expected newline after statement, got {:?}", self.peek())));
             }
             
             self.skip_newlines();

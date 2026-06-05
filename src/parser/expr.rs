@@ -4,35 +4,35 @@ use super::Parser;
 use super::ParseError;
 
 impl Parser {
-    pub(super) fn parse_expr(&mut self) -> Result<Expression, ParseError> {
+    pub(super) fn parse_expr(&mut self) -> Result<Expr, ParseError> {
         self.parse_or()
     }
 
-    fn parse_or(&mut self) -> Result<Expression, ParseError> {
+    fn parse_or(&mut self) -> Result<Expr, ParseError> {
         let mut left = self.parse_and()?;
 
         while self.peek_is(TokenKind::Or) {
             self.advance();
             let right = self.parse_and()?;
-            left = Expression::BinaryOp { op: BinOp::Or, left: Box::new(left), right: Box::new(right) };
+            left = Expr::BinaryOp { op: BinOp::Or, left: Box::new(left), right: Box::new(right) };
         }
 
         Ok(left)
     }
 
-    fn parse_and(&mut self) -> Result<Expression, ParseError> {
+    fn parse_and(&mut self) -> Result<Expr, ParseError> {
         let mut left = self.parse_equality()?;
 
         while self.peek_is(TokenKind::And) {
             self.advance();
             let right = self.parse_equality()?;
-            left = Expression::BinaryOp { op: BinOp::And, left: Box::new(left), right: Box::new(right) };
+            left = Expr::BinaryOp { op: BinOp::And, left: Box::new(left), right: Box::new(right) };
         }
         
         Ok(left)
     }
 
-    fn parse_equality(&mut self) -> Result<Expression, ParseError> {
+    fn parse_equality(&mut self) -> Result<Expr, ParseError> {
         let mut left = self.parse_comparison()?;
         loop {
             let op = match self.peek() {
@@ -42,12 +42,12 @@ impl Parser {
             };
             self.advance();
             let right = self.parse_comparison()?;
-            left = Expression::BinaryOp { op, left: Box::new(left), right: Box::new(right) };
+            left = Expr::BinaryOp { op, left: Box::new(left), right: Box::new(right) };
         }
         Ok(left)
     }
 
-    fn parse_comparison(&mut self) -> Result<Expression, ParseError> {
+    fn parse_comparison(&mut self) -> Result<Expr, ParseError> {
         let mut left = self.parse_additive()?;
         loop {
             let op = match self.peek() {
@@ -59,12 +59,12 @@ impl Parser {
             };
             self.advance();
             let right = self.parse_additive()?;
-            left = Expression::BinaryOp { op, left: Box::new(left), right: Box::new(right) };
+            left = Expr::BinaryOp { op, left: Box::new(left), right: Box::new(right) };
         }
         Ok(left)
     }
 
-    fn parse_additive(&mut self) -> Result<Expression, ParseError> {
+    fn parse_additive(&mut self) -> Result<Expr, ParseError> {
         let mut left = self.parse_multiplicative()?;
 
         loop {
@@ -75,13 +75,13 @@ impl Parser {
             };
             self.advance();
             let right = self.parse_multiplicative()?;
-            left = Expression::BinaryOp { op, left: Box::new(left), right: Box::new(right) };
+            left = Expr::BinaryOp { op, left: Box::new(left), right: Box::new(right) };
         }
         
         Ok(left)
     }
 
-    fn parse_multiplicative(&mut self) -> Result<Expression, ParseError> {
+    fn parse_multiplicative(&mut self) -> Result<Expr, ParseError> {
         let mut left = self.parse_unary()?;
         
         loop {
@@ -92,13 +92,13 @@ impl Parser {
             };
             self.advance();
             let right = self.parse_unary()?;
-            left = Expression::BinaryOp { op, left: Box::new(left), right: Box::new(right) };
+            left = Expr::BinaryOp { op, left: Box::new(left), right: Box::new(right) };
         }
 
         Ok(left)
     }
 
-    fn parse_unary(&mut self) -> Result<Expression, ParseError> {
+    fn parse_unary(&mut self) -> Result<Expr, ParseError> {
         let op = match self.peek() {
             TokenKind::Minus => UnaryOp::Neg,
             TokenKind::Bang  => UnaryOp::Not,
@@ -107,22 +107,22 @@ impl Parser {
 
         self.advance();
         let operand = self.parse_unary()?;
-        Ok(Expression::UnaryOp { op, operand: Box::new(operand) })
+        Ok(Expr::UnaryOp { op, operand: Box::new(operand) })
     }
 
-    fn parse_primary(&mut self) -> Result<Expression, ParseError> {
+    fn parse_primary(&mut self) -> Result<Expr, ParseError> {
         match self.peek() {
             TokenKind::Int(value) => {
                 self.advance();
-                Ok(Expression::Int(IntLit { value }))
+                Ok(Expr::Int(IntLit { value }))
             }
             TokenKind::True => {
                 self.advance();
-                Ok(Expression::Bool(BoolLit { value: true }))
+                Ok(Expr::Bool(BoolLit { value: true }))
             }
             TokenKind::False => {
                 self.advance();
-                Ok(Expression::Bool(BoolLit { value: false }))
+                Ok(Expr::Bool(BoolLit { value: false }))
             }
             TokenKind::LParen => {
                 self.advance();
@@ -137,16 +137,16 @@ impl Parser {
                 let ident = self.parse_identifier()?;
                 if self.peek() == TokenKind::LParen {
                     let args = self.parse_call_args()?;
-                    Ok(Expression::Call { callee: ident, args })
+                    Ok(Expr::Call { callee: ident, args })
                 } else {
-                    Ok(Expression::Identifier(ident))
+                    Ok(Expr::Identifier(ident))
                 }
             }
             other => Err(self.err(format!("expected expression, got {:?}", other)))
         }
     }
 
-    fn parse_call_args(&mut self) -> Result<Vec<Expression>, ParseError> {
+    fn parse_call_args(&mut self) -> Result<Vec<Expr>, ParseError> {
         self.consume(TokenKind::LParen)?;
         let mut args = Vec::new();
 

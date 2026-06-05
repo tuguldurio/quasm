@@ -14,11 +14,14 @@ pub enum TokenKind {
     #[token("var")]
     Var,
 
-    #[token("self")]
-    SelfTok,
+    #[token("enum")]
+    Enum,
 
     #[token("struct")]
     Struct,
+
+    #[token("self")]
+    SelfTok,
 
     #[token("type")]
     Type,
