@@ -1,0 +1,38 @@
+struct Point {
+    x: Float
+    y: Float
+}
+
+struct Rect {
+    origin: Point
+    width: Float
+    height: Float
+}
+
+func Rect.new(x: Float, y: Float, width: Float, height: Float): Self {
+    Rect(
+        Point(x, y),
+        width,
+        height
+    )
+}
+
+func Rect.area(self): Float {
+    self.width * self.height
+}
+
+func Rect.perimeter(self): Float {
+    2.0 * (self.width + self.height)
+}
+
+func Rect.contains(self, p: Point): bool {
+    p.x >= self.origin.x && p.x <= self.origin.x + self.width && p.y >= self.origin.y && p.y <= self.origin.y + self.height
+}
+
+func main() {
+    // imitate constructor
+    let rect = Rect.new(0.0, 0.0, 10.0, 5.0)
+
+    // direct struct initialization
+    let p = Point(3.0, 4.0)
+}
