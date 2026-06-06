@@ -59,9 +59,9 @@ pub enum Expr {
         callee: Box<Expr>,
         args: Vec<Expr>
     },
-    MemberAccess {
+    FieldAccess {
         base: Box<Expr>,
-        member: Identifier
+        field: Identifier
     }
 }
 

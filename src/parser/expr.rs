@@ -117,8 +117,8 @@ impl Parser {
             match self.peek() {
                 TokenKind::Dot => {
                     self.advance();
-                    let member = self.parse_identifier()?;
-                    expr = Expr::MemberAccess { base: Box::new(expr), member };
+                    let field = self.parse_identifier()?;
+                    expr = Expr::FieldAccess { base: Box::new(expr), field };
                 }
                 TokenKind::LParen => {
                     let args = self.parse_call_args()?;
