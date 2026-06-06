@@ -48,6 +48,8 @@ pub enum TokenKind {
     #[token(")")] RParen,
     #[token("{")] LBrace,
     #[token("}")] RBrace,
+    #[token("[")] LBracket,
+    #[token("]")] RBracket,
     #[token(",")] Comma,
     #[token(":")] Colon,
     #[token(";")] Semicolon,

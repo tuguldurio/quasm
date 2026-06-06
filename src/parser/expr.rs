@@ -124,6 +124,12 @@ impl Parser {
                     let args = self.parse_call_args()?;
                     expr = Expr::Call { callee: Box::new(expr), args };
                 }
+                TokenKind::LBracket => {
+                    self.advance();
+                    let index = self.parse_expr()?;
+                    self.consume(TokenKind::RBracket)?;
+                    expr = Expr::Index { base: Box::new(expr), index: Box::new(index) };
+                }
                 _ => break
             }
         }
@@ -156,6 +162,10 @@ impl Parser {
                 self.skip_newlines();
                 self.consume(TokenKind::RParen)?;
                 Ok(expr)
+            }
+            TokenKind::LBracket => {
+                let elems = self.parse_comma_list(TokenKind::LBracket, TokenKind::RBracket, "element", |p| p.parse_expr())?;
+                Ok(Expr::Array(elems))
             }
             TokenKind::SelfTok => {
                 self.advance();

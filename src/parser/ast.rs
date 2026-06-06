@@ -15,7 +15,7 @@ pub enum Stmt {
 #[derive(Debug)]
 pub struct LetStmt {
     pub name: Identifier,
-    pub ty: Option<Identifier>,
+    pub ty: Option<Type>,
     pub value: Expr
 }
 
@@ -24,14 +24,14 @@ pub struct FuncStmt {
     pub name: Identifier,
     pub receiver: Option<Identifier>,
     pub params: Vec<Param>,
-    pub ret: Option<Identifier>,
+    pub ret: Option<Type>,
     pub body: Block
 }
 
 #[derive(Debug)]
 pub struct Param {
     pub name: Identifier,
-    pub ty: Identifier
+    pub ty: Type
 }
 
 // Statements in a block are newline-separated; the last Stmt::Expr is the implicit return value.
@@ -46,6 +46,7 @@ pub enum Expr {
     Float(FloatLit),
     Bool(BoolLit),
     Identifier(Identifier),
+    Array(Vec<Expr>),
     BinaryOp {
         op: BinOp,
         left: Box<Expr>,
@@ -58,6 +59,10 @@ pub enum Expr {
     Call {
         callee: Box<Expr>,
         args: Vec<Expr>
+    },
+    Index {
+        base: Box<Expr>,
+        index: Box<Expr>
     },
     FieldAccess {
         base: Box<Expr>,
@@ -95,7 +100,7 @@ pub struct EnumStmt {
 #[derive(Debug)]
 pub struct EnumVariant {
     pub name: Identifier,
-    pub ty_fields: Vec<Identifier>
+    pub ty_fields: Vec<Type>
 }
 
 #[derive(Debug)]
@@ -107,7 +112,13 @@ pub struct StructStmt {
 #[derive(Debug)]
 pub struct StructField {
     pub name: Identifier,
-    pub ty: Identifier
+    pub ty: Type
+}
+
+#[derive(Debug)]
+pub enum Type {
+    Named(Identifier),
+    Array(Box<Type>)
 }
 
 #[derive(Debug, Clone, Copy, PartialEq)]

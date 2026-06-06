@@ -82,12 +82,12 @@ impl Parser {
         self.skip_newlines();
         let mut items = Vec::new();
 
-        while self.peek_until(TokenKind::RParen) {
+        while self.peek_until(close.clone()) {
             items.push(parse_item(self)?);
 
             if !self.peek_is(TokenKind::Comma) {
                 if multiline && !self.peek_is(TokenKind::Newline) {
-                    return Err(self.err("closing ')' must be on its own line in multiline style"));
+                    return Err(self.err(format!("closing {:?} must be on its own line in multiline style", close)));
                 }
                 break;
             }
@@ -153,7 +153,7 @@ impl Parser {
                 p.advance();
                 return Ok(Param {
                     name: Identifier { value: "self".into() },
-                    ty: Identifier { value: "Self".into() }
+                    ty: Type::Named(Identifier { value: "Self".into() })
                 });
             }
             let name = p.parse_identifier()?;
@@ -199,7 +199,7 @@ impl Parser {
         let name = self.parse_identifier()?;
 
         let ty_fields = if self.peek_is(TokenKind::LParen) {
-            self.parse_comma_list(TokenKind::LParen, TokenKind::RParen, "type field", |p| p.parse_identifier())?
+            self.parse_comma_list(TokenKind::LParen, TokenKind::RParen, "type field", |p| p.parse_type())?
         } else {
             Vec::new()
         };
@@ -226,18 +226,28 @@ impl Parser {
     fn parse_struct_field(&mut self) -> Result<StructField, ParseError> {
         let name = self.parse_identifier()?;
         self.consume(TokenKind::Colon)?;
-        let ty = self.parse_identifier()?;
+        let ty = self.parse_type()?;
         Ok(StructField { name, ty })
     }
 
-    fn parse_type_annotation(&mut self) -> Result<Option<Identifier>, ParseError> {
+    fn parse_type_annotation(&mut self) -> Result<Option<Type>, ParseError> {
         if !self.peek_is(TokenKind::Colon) {
             return Ok(None);
         }
         self.advance();
+        Ok(Some(self.parse_type()?))
+    }
+
+    fn parse_type(&mut self) -> Result<Type, ParseError> {
         match self.peek() {
-            TokenKind::Identifier(_) => Ok(Some(self.parse_identifier()?)),
-            other => Err(self.err(format!("expected type name after ':', got {:?}", other)))
+            TokenKind::LBracket => {
+                self.advance();
+                let inner = self.parse_type()?;
+                self.consume(TokenKind::RBracket)?;
+                Ok(Type::Array(Box::new(inner)))
+            }
+            TokenKind::Identifier(_) => Ok(Type::Named(self.parse_identifier()?)),
+            other => Err(self.err(format!("expected type, got {:?}", other)))
         }
     }
 
