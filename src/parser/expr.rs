@@ -28,7 +28,7 @@ impl Parser {
             let right = self.parse_equality()?;
             left = Expr::BinaryOp { op: BinOp::And, left: Box::new(left), right: Box::new(right) };
         }
-        
+
         Ok(left)
     }
 
@@ -77,13 +77,13 @@ impl Parser {
             let right = self.parse_multiplicative()?;
             left = Expr::BinaryOp { op, left: Box::new(left), right: Box::new(right) };
         }
-        
+
         Ok(left)
     }
 
     fn parse_multiplicative(&mut self) -> Result<Expr, ParseError> {
         let mut left = self.parse_unary()?;
-        
+
         loop {
             let op = match self.peek() {
                 TokenKind::Asterisk => BinOp::Mul,
@@ -102,12 +102,33 @@ impl Parser {
         let op = match self.peek() {
             TokenKind::Minus => UnaryOp::Neg,
             TokenKind::Bang => UnaryOp::Not,
-            _ => return self.parse_primary()
+            _ => return self.parse_postfix(),
         };
 
         self.advance();
         let operand = self.parse_unary()?;
         Ok(Expr::UnaryOp { op, operand: Box::new(operand) })
+    }
+
+    fn parse_postfix(&mut self) -> Result<Expr, ParseError> {
+        let mut expr = self.parse_primary()?;
+
+        loop {
+            match self.peek() {
+                TokenKind::Dot => {
+                    self.advance();
+                    let member = self.parse_identifier()?;
+                    expr = Expr::MemberAccess { base: Box::new(expr), member };
+                }
+                TokenKind::LParen => {
+                    let args = self.parse_call_args()?;
+                    expr = Expr::Call { callee: Box::new(expr), args };
+                }
+                _ => break
+            }
+        }
+
+        Ok(expr)
     }
 
     fn parse_primary(&mut self) -> Result<Expr, ParseError> {
@@ -130,21 +151,18 @@ impl Parser {
             }
             TokenKind::LParen => {
                 self.advance();
-                // newlines after '(' and before ')' are allowed
                 self.skip_newlines();
                 let expr = self.parse_expr()?;
                 self.skip_newlines();
                 self.consume(TokenKind::RParen)?;
                 Ok(expr)
             }
+            TokenKind::SelfTok => {
+                self.advance();
+                Ok(Expr::Identifier(Identifier { value: "self".into() }))
+            }
             TokenKind::Identifier(_) => {
-                let ident = self.parse_identifier()?;
-                if self.peek_is(TokenKind::LParen) {
-                    let args = self.parse_call_args()?;
-                    Ok(Expr::Call { callee: ident, args })
-                } else {
-                    Ok(Expr::Identifier(ident))
-                }
+                Ok(Expr::Identifier(self.parse_identifier()?))
             }
             other => Err(self.err(format!("expected expression, got {:?}", other)))
         }

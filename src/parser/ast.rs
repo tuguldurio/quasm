@@ -22,6 +22,7 @@ pub struct LetStmt {
 #[derive(Debug)]
 pub struct FuncStmt {
     pub name: Identifier,
+    pub receiver: Option<Identifier>,
     pub params: Vec<Param>,
     pub ret: Option<Identifier>,
     pub body: Block
@@ -45,10 +46,6 @@ pub enum Expr {
     Float(FloatLit),
     Bool(BoolLit),
     Identifier(Identifier),
-    Call {
-        callee: Identifier,
-        args: Vec<Expr>
-    },
     BinaryOp {
         op: BinOp,
         left: Box<Expr>,
@@ -57,6 +54,14 @@ pub enum Expr {
     UnaryOp {
         op: UnaryOp,
         operand: Box<Expr>
+    },
+    Call {
+        callee: Box<Expr>,
+        args: Vec<Expr>
+    },
+    MemberAccess {
+        base: Box<Expr>,
+        member: Identifier
     }
 }
 

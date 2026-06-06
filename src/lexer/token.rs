@@ -56,7 +56,7 @@ pub enum TokenKind {
     #[token("&&")] And,
     #[token("||")] Or,
     #[token("\n")] Newline,
-    
+
     Eof,
     Error
 }
