@@ -68,6 +68,9 @@ pub enum TokenKind {
     #[token("or")]
     Or,
 
+    #[regex(r"[0-9]+\.[0-9]+", |lex| lex.slice().parse::<f64>().ok())]
+    Float(f64),
+
     #[regex(r"[0-9]+", |lex| lex.slice().parse::<i64>().ok())]
     Int(i64),
 

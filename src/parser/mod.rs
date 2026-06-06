@@ -70,6 +70,42 @@ impl Parser {
         self.skip_newlines();
         Ok(())
     }
+
+    // Parses comma list with singleline/multiline enforcement
+    // Multiline mode is triggered when '(' is immediately followed by a newline
+    fn parse_comma_list<T, F>(&mut self, open: TokenKind, close: TokenKind, label: &str, mut parse_item: F) -> Result<Vec<T>, ParseError>
+    where
+        F: FnMut(&mut Self) -> Result<T, ParseError>,
+    {
+        self.consume(open)?;
+        let multiline = self.peek_is(TokenKind::Newline);
+        self.skip_newlines();
+        let mut items = Vec::new();
+
+        while self.peek_until(TokenKind::RParen) {
+            items.push(parse_item(self)?);
+
+            if !self.peek_is(TokenKind::Comma) {
+                if multiline && !self.peek_is(TokenKind::Newline) {
+                    return Err(self.err("closing ')' must be on its own line in multiline style"));
+                }
+                break;
+            }
+            self.consume(TokenKind::Comma)?;
+            if multiline {
+                self.skip_newlines();
+            } else if self.peek_is(TokenKind::Newline) {
+                return Err(self.err(format!("{label}s must all be on the same line; use a newline after '(' for multiline style")));
+            }
+        }
+
+        self.skip_newlines();
+        if self.peek_is(TokenKind::Comma) {
+            return Err(self.err(format!("comma must follow a {label} on the same line, not precede it on the next line")));
+        }
+        self.consume(close)?;
+        Ok(items)
+    }
 }
 
 impl Parser {
@@ -81,7 +117,7 @@ impl Parser {
             statements.push(self.parse_statement()?);
             self.skip_newlines();
         }
-        
+
         Ok(Program { statements })
     }
 
@@ -105,23 +141,12 @@ impl Parser {
     }
 
     fn parse_params(&mut self) -> Result<Vec<Param>, ParseError> {
-        self.consume(TokenKind::LParen)?;
-        let mut params = Vec::new();
-
-        while self.peek_until(TokenKind::RParen) {
-            let name = self.parse_identifier()?;
-            let ty = self.parse_type_annotation()?
-                .ok_or_else(|| self.err("expected type annotation for parameter"))?;
-            params.push(Param { name, ty });
-
-            if self.peek_is(TokenKind::Comma) {
-                break;
-            }
-            self.advance();
-        }
-
-        self.consume(TokenKind::RParen)?;
-        Ok(params)
+        self.parse_comma_list(TokenKind::LParen, TokenKind::RParen, "parameter", |p| {
+            let name = p.parse_identifier()?;
+            let ty = p.parse_type_annotation()?
+                .ok_or_else(|| p.err("expected type annotation for parameter"))?;
+            Ok(Param { name, ty })
+        })
     }
 
     fn parse_let_statement(&mut self) -> Result<LetStmt, ParseError> {
@@ -137,18 +162,11 @@ impl Parser {
         self.consume(TokenKind::Enum)?;
         let name = self.parse_identifier()?;
 
-        let mut ty_params = Vec::new();
-        if self.peek_is(TokenKind::LParen) {
-            self.advance();
-            while self.peek_until(TokenKind::RParen) {
-                ty_params.push(self.parse_identifier()?);
-                if !self.peek_is(TokenKind::Comma) {
-                    break;
-                }
-                self.advance();
-            }
-            self.consume(TokenKind::RParen)?;
-        }
+        let ty_params = if self.peek_is(TokenKind::LParen) {
+            self.parse_comma_list(TokenKind::LParen, TokenKind::RParen, "type parameter", |p| p.parse_identifier())?
+        } else {
+            Vec::new()
+        };
 
         self.consume(TokenKind::LBrace)?;
         self.skip_newlines();
@@ -166,19 +184,11 @@ impl Parser {
     fn parse_enum_variant(&mut self) -> Result<EnumVariant, ParseError> {
         let name = self.parse_identifier()?;
 
-        let mut ty_fields = Vec::new();
-        if self.peek_is(TokenKind::LParen) {
-            self.advance();
-            while self.peek_until(TokenKind::RParen) {
-                ty_fields.push(self.parse_identifier()?);
-
-                if !self.peek_is(TokenKind::Comma) {
-                    break;
-                }
-                self.advance();
-            }
-            self.consume(TokenKind::RParen)?;
-        }
+        let ty_fields = if self.peek_is(TokenKind::LParen) {
+            self.parse_comma_list(TokenKind::LParen, TokenKind::RParen, "type field", |p| p.parse_identifier())?
+        } else {
+            Vec::new()
+        };
 
         Ok(EnumVariant { name, ty_fields })
     }

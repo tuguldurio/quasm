@@ -116,6 +116,10 @@ impl Parser {
                 self.advance();
                 Ok(Expr::Int(IntLit { value }))
             }
+            TokenKind::Float(value) => {
+                self.advance();
+                Ok(Expr::Float(FloatLit { value }))
+            }
             TokenKind::True => {
                 self.advance();
                 Ok(Expr::Bool(BoolLit { value: true }))
@@ -147,19 +151,7 @@ impl Parser {
     }
 
     fn parse_call_args(&mut self) -> Result<Vec<Expr>, ParseError> {
-        self.consume(TokenKind::LParen)?;
-        let mut args = Vec::new();
-
-        while self.peek_until(TokenKind::RParen) {
-            args.push(self.parse_expr()?);
-            if !self.peek_is(TokenKind::Comma) {
-                break;
-            }
-            self.advance();
-        }
-
-        self.consume(TokenKind::RParen)?;
-        Ok(args)
+        self.parse_comma_list(TokenKind::LParen, TokenKind::RParen, "argument", |p| p.parse_expr())
     }
 
     pub(super) fn parse_identifier(&mut self) -> Result<Identifier, ParseError> {

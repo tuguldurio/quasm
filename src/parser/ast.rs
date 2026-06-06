@@ -42,6 +42,7 @@ pub struct Block {
 #[derive(Debug)]
 pub enum Expr {
     Int(IntLit),
+    Float(FloatLit),
     Bool(BoolLit),
     Identifier(Identifier),
     Call {
@@ -62,6 +63,11 @@ pub enum Expr {
 #[derive(Debug)]
 pub struct IntLit {
     pub value: i64
+}
+
+#[derive(Debug)]
+pub struct FloatLit {
+    pub value: f64
 }
 
 #[derive(Debug)]
