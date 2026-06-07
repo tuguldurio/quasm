@@ -42,9 +42,9 @@ pub struct Block {
 
 #[derive(Debug)]
 pub enum Expr {
-    Int(IntLit),
-    Float(FloatLit),
-    Bool(BoolLit),
+    Int(i64),
+    Float(f64),
+    Bool(bool),
     Identifier(Identifier),
     Array(Vec<Expr>),
     BinaryOp {
@@ -68,21 +68,6 @@ pub enum Expr {
         base: Box<Expr>,
         field: Identifier
     }
-}
-
-#[derive(Debug)]
-pub struct IntLit {
-    pub value: i64
-}
-
-#[derive(Debug)]
-pub struct FloatLit {
-    pub value: f64
-}
-
-#[derive(Debug)]
-pub struct BoolLit {
-    pub value: bool
 }
 
 #[derive(Debug)]
