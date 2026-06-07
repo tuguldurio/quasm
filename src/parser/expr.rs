@@ -167,6 +167,13 @@ impl Parser {
                 let elems = self.parse_comma_list(TokenKind::LBracket, TokenKind::RBracket, "element", |p| p.parse_expr())?;
                 Ok(Expr::Array(elems))
             }
+            TokenKind::LBrace => {
+                Ok(Expr::Block(self.parse_block()?))
+            }
+            TokenKind::If => {
+                self.advance();
+                self.parse_if_expr()
+            }
             TokenKind::SelfTok => {
                 self.advance();
                 Ok(Expr::Identifier(Identifier { value: "self".into() }))
@@ -176,6 +183,25 @@ impl Parser {
             }
             other => Err(self.err(format!("expected expression, got {:?}", other)))
         }
+    }
+
+    fn parse_if_expr(&mut self) -> Result<Expr, ParseError> {
+        let condition = self.parse_expr()?;
+        let then_block = self.parse_block()?;
+
+        let else_branch = match self.peek() {
+            TokenKind::Elif => {
+                self.advance();
+                Some(Box::new(self.parse_if_expr()?))
+            }
+            TokenKind::Else => {
+                self.advance();
+                Some(Box::new(Expr::Block(self.parse_block()?)))
+            }
+            _ => None
+        };
+
+        Ok(Expr::If { condition: Box::new(condition), then_block, else_branch })
     }
 
     fn parse_call_args(&mut self) -> Result<Vec<Expr>, ParseError> {

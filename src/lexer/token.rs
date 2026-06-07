@@ -13,6 +13,7 @@ pub enum TokenKind {
     #[token("self")] SelfTok,
     #[token("type")] Type,
     #[token("if")] If,
+    #[token("elif")] Elif,
     #[token("else")] Else,
     #[token("match")] Match,
     #[token("for")] For,

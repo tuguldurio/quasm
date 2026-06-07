@@ -47,6 +47,7 @@ pub enum Expr {
     Bool(bool),
     Identifier(Identifier),
     Array(Vec<Expr>),
+    Block(Block),
     BinaryOp {
         op: BinOp,
         left: Box<Expr>,
@@ -67,6 +68,11 @@ pub enum Expr {
     FieldAccess {
         base: Box<Expr>,
         field: Identifier
+    },
+    If {
+        condition: Box<Expr>,
+        then_block: Block,
+        else_branch: Option<Box<Expr>>
     }
 }
 

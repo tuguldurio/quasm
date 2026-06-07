@@ -1,3 +1,5 @@
+#[allow(unused)]
+
 enum Type {
     Int,
     Float,
