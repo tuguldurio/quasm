@@ -133,29 +133,20 @@ impl Parser {
 
     fn parse_func_decl(&mut self) -> Result<FuncStmt, ParseError> {
         self.consume(TokenKind::Func)?;
-        let first = self.parse_identifier()?;
-        let (receiver, name) = if self.peek_is(TokenKind::Dot) {
-            self.advance();
-            let method = self.parse_identifier()?;
-            (Some(first), method)
-        } else {
-            (None, first)
-        };
+        let name = self.parse_identifier()?;
         let params = self.parse_func_params()?;
-        let ret = self.parse_type_annotation()?;
+        let ret = if self.peek_is(TokenKind::Arrow) {
+            self.advance();
+            Some(self.parse_type()?)
+        } else {
+            None
+        };
         let body = self.parse_block()?;
-        Ok(FuncStmt { name, receiver, params, ret, body })
+        Ok(FuncStmt { name, params, ret, body })
     }
 
     fn parse_func_params(&mut self) -> Result<Vec<Param>, ParseError> {
         self.parse_comma_list(TokenKind::LParen, TokenKind::RParen, "parameter", |p| {
-            if p.peek_is(TokenKind::SelfTok) {
-                p.advance();
-                return Ok(Param {
-                    name: Identifier { value: "self".into() },
-                    ty: Type::Named(Identifier { value: "Self".into() })
-                });
-            }
             let name = p.parse_identifier()?;
             let ty = p.parse_type_annotation()?
                 .ok_or_else(|| p.err("expected type annotation for parameter"))?;

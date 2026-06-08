@@ -22,7 +22,6 @@ pub struct LetStmt {
 #[derive(Debug)]
 pub struct FuncStmt {
     pub name: Identifier,
-    pub receiver: Option<Identifier>,
     pub params: Vec<Param>,
     pub ret: Option<Type>,
     pub body: Block

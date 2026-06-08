@@ -174,10 +174,6 @@ impl Parser {
                 self.advance();
                 self.parse_if_expr()
             }
-            TokenKind::SelfTok => {
-                self.advance();
-                Ok(Expr::Identifier(Identifier { value: "self".into() }))
-            }
             TokenKind::Identifier(_) => {
                 Ok(Expr::Identifier(self.parse_identifier()?))
             }
