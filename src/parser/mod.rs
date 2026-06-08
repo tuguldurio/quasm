@@ -125,7 +125,7 @@ impl Parser {
         match self.peek() {
             TokenKind::Func => Ok(Stmt::Func(self.parse_func_decl()?)),
             TokenKind::Let => Ok(Stmt::Let(self.parse_let_statement()?)),
-            TokenKind::Enum => Ok(Stmt::Enum(self.parse_enum_decl()?)),
+            TokenKind::Type => Ok(Stmt::Type(self.parse_type_decl()?)),
             TokenKind::Struct => Ok(Stmt::Struct(self.parse_struct_decl()?)),
             _ => Ok(Stmt::Expr(self.parse_expr()?)),
         }
@@ -163,8 +163,8 @@ impl Parser {
         Ok(LetStmt { name, ty, value })
     }
 
-    fn parse_enum_decl(&mut self) -> Result<EnumStmt, ParseError> {
-        self.consume(TokenKind::Enum)?;
+    fn parse_type_decl(&mut self) -> Result<TypeStmt, ParseError> {
+        self.consume(TokenKind::Type)?;
         let name = self.parse_identifier()?;
 
         let ty_params = if self.peek_is(TokenKind::LParen) {
@@ -178,15 +178,15 @@ impl Parser {
 
         let mut variants = Vec::new();
         while self.peek_until(TokenKind::RBrace) {
-            variants.push(self.parse_enum_variant()?);
+            variants.push(self.parse_type_variant()?);
             self.expect_newline("variant")?;
         }
 
         self.consume(TokenKind::RBrace)?;
-        Ok(EnumStmt { name, ty_params, variants })
+        Ok(TypeStmt { name, ty_params, variants })
     }
 
-    fn parse_enum_variant(&mut self) -> Result<EnumVariant, ParseError> {
+    fn parse_type_variant(&mut self) -> Result<TypeVariant, ParseError> {
         let name = self.parse_identifier()?;
 
         let ty_fields = if self.peek_is(TokenKind::LParen) {
@@ -195,7 +195,7 @@ impl Parser {
             Vec::new()
         };
 
-        Ok(EnumVariant { name, ty_fields })
+        Ok(TypeVariant { name, ty_fields })
     }
 
     fn parse_struct_decl(&mut self) -> Result<StructStmt, ParseError> {

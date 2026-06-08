@@ -8,7 +8,6 @@ pub enum TokenKind {
     #[token("func")] Func,
     #[token("let")] Let,
     #[token("var")] Var,
-    #[token("enum")] Enum,
     #[token("struct")] Struct,
     #[token("type")] Type,
     #[token("if")] If,

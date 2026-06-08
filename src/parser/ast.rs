@@ -7,7 +7,7 @@ pub struct Program {
 pub enum Stmt {
     Func(FuncStmt),
     Let(LetStmt),
-    Enum(EnumStmt),
+    Type(TypeStmt),
     Struct(StructStmt),
     Expr(Expr)
 }
@@ -81,14 +81,14 @@ pub struct Identifier {
 }
 
 #[derive(Debug)]
-pub struct EnumStmt {
+pub struct TypeStmt {
     pub name: Identifier,
     pub ty_params: Vec<Identifier>,
-    pub variants: Vec<EnumVariant>
+    pub variants: Vec<TypeVariant>
 }
 
 #[derive(Debug)]
-pub struct EnumVariant {
+pub struct TypeVariant {
     pub name: Identifier,
     pub ty_fields: Vec<Type>
 }
