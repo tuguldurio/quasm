@@ -30,7 +30,7 @@ func contains(r: Rect, p: Point) -> Bool {
 }
 
 func main() {
-    // imitate constructor
+    // imitate constructor with UFCS
     let rect = Rect.new(0.0, 0.0, 10.0, 5.0)
 
     // direct struct initialization
