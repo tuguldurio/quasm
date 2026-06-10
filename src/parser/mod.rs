@@ -109,16 +109,6 @@ impl Parser {
         Ok(items)
     }
 
-    fn parse_identifier(&mut self) -> Result<Identifier, ParseError> {
-        match self.peek() {
-            TokenKind::Identifier(value) => {
-                self.advance();
-                Ok(Identifier { value })
-            }
-            other => Err(self.err(format!("expected identifier, got {:?}", other)))
-        }
-    }
-
     // Parses a {...} body of newline separated items
     fn parse_braced_list<T, F>(&mut self, label: &str, mut parse_item: F) -> Result<Vec<T>, ParseError>
     where
@@ -135,5 +125,23 @@ impl Parser {
 
         self.consume(TokenKind::RBrace)?;
         Ok(items)
+    }
+}
+
+impl Parser {
+    fn parse_identifier(&mut self) -> Result<Identifier, ParseError> {
+        match self.peek() {
+            TokenKind::Identifier(value) => {
+                self.advance();
+                Ok(Identifier { value })
+            }
+            other => Err(self.err(format!("expected identifier, got {:?}", other)))
+        }
+    }
+
+    fn parse_param(&mut self) -> Result<Param, ParseError> {
+        let name = self.parse_identifier()?;
+        let ty = self.parse_type_annotation()?;
+        Ok(Param { name, ty })
     }
 }

@@ -42,10 +42,11 @@ impl Parser {
 
     fn parse_func_params(&mut self) -> Result<Vec<Param>, ParseError> {
         self.parse_comma_list(TokenKind::LParen, TokenKind::RParen, "parameter", |p| {
-            let name = p.parse_identifier()?;
-            let ty = p.parse_type_annotation()?
-                .ok_or_else(|| p.err("expected type annotation for parameter"))?;
-            Ok(Param { name, ty })
+            let param = p.parse_param()?;
+            if param.ty.is_none() {
+                return Err(p.err("expected type annotation for parameter"));
+            }
+            Ok(param)
         })
     }
 

@@ -30,7 +30,7 @@ pub struct FuncStmt {
 #[derive(Debug)]
 pub struct Param {
     pub name: Identifier,
-    pub ty: Type
+    pub ty: Option<Type>
 }
 
 #[derive(Debug)]
@@ -69,7 +69,40 @@ pub enum Expr {
         condition: Box<Expr>,
         then_block: Block,
         else_branch: Option<Box<Expr>>
+    },
+    Match {
+        subject: Box<Expr>,
+        arms: Vec<MatchArm>
+    },
+    Closure {
+        params: Vec<Param>,
+        ret: Option<Type>,
+        body: Box<Expr>
     }
+}
+
+#[derive(Debug)]
+pub struct MatchArm {
+    pub pattern: Pattern,
+    pub guard: Option<Expr>,
+    pub body: Expr
+}
+
+// A bare identifier pattern may be a binding or a unit constructor; sema decides.
+#[derive(Debug)]
+pub enum Pattern {
+    Wildcard,
+    Literal(Literal),
+    Identifier(Identifier),
+    Constructor {
+        name: Identifier,
+        args: Vec<Pattern>
+    },
+    Array(Vec<Pattern>),
+    // `..` binds the remainder of an array, optionally to a name;
+    // only appears as the last element of an Array pattern
+    Rest(Option<Identifier>),
+    Or(Vec<Pattern>)
 }
 
 #[derive(Debug, Clone, Copy, PartialEq)]

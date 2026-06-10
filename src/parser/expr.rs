@@ -174,6 +174,12 @@ impl Parser {
                 self.advance();
                 self.parse_if_expr()
             }
+            TokenKind::Match => {
+                self.parse_match_expr()
+            }
+            TokenKind::VerBar | TokenKind::Or => {
+                self.parse_closure()
+            }
             TokenKind::Identifier(_) => {
                 Ok(Expr::Identifier(self.parse_identifier()?))
             }
@@ -202,5 +208,136 @@ impl Parser {
 
     fn parse_call_args(&mut self) -> Result<Vec<Expr>, ParseError> {
         self.parse_comma_list(TokenKind::LParen, TokenKind::RParen, "argument", |p| p.parse_expr())
+    }
+
+    fn parse_closure(&mut self) -> Result<Expr, ParseError> {
+        // || lexes as the Or token, so an empty parameter list arrives as a single token
+        let params = if self.peek_is(TokenKind::Or) {
+            self.advance();
+            Vec::new()
+        } else {
+            self.parse_comma_list(TokenKind::VerBar, TokenKind::VerBar, "parameter", |p| p.parse_param())?
+        };
+
+        let ret = if self.peek_is(TokenKind::Arrow) {
+            self.advance();
+            Some(self.parse_type()?)
+        } else {
+            None
+        };
+
+        self.consume(TokenKind::FatArrow)?;
+        let body = self.parse_expr()?;
+
+        Ok(Expr::Closure { params, ret, body: Box::new(body) })
+    }
+
+    fn parse_match_expr(&mut self) -> Result<Expr, ParseError> {
+        self.consume(TokenKind::Match)?;
+        let subject = self.parse_expr()?;
+        let arms = self.parse_braced_list("match arm", |p| p.parse_match_arm())?;
+        Ok(Expr::Match { subject: Box::new(subject), arms })
+    }
+
+    fn parse_match_arm(&mut self) -> Result<MatchArm, ParseError> {
+        let pattern = self.parse_pattern()?;
+
+        let guard = if self.peek_is(TokenKind::If) {
+            self.advance();
+            Some(self.parse_expr()?)
+        } else {
+            None
+        };
+
+        self.consume(TokenKind::FatArrow)?;
+        let body = self.parse_expr()?;
+        Ok(MatchArm { pattern, guard, body })
+    }
+
+    fn parse_pattern(&mut self) -> Result<Pattern, ParseError> {
+        let first = self.parse_single_pattern()?;
+        if !self.peek_is(TokenKind::VerBar) {
+            return Ok(first);
+        }
+
+        let mut alternatives = vec![first];
+        while self.peek_is(TokenKind::VerBar) {
+            self.advance();
+            alternatives.push(self.parse_single_pattern()?);
+        }
+        Ok(Pattern::Or(alternatives))
+    }
+
+    fn parse_single_pattern(&mut self) -> Result<Pattern, ParseError> {
+        match self.peek() {
+            TokenKind::Int(value) => {
+                self.advance();
+                Ok(Pattern::Literal(Literal::Int(value)))
+            }
+            TokenKind::Float(value) => {
+                self.advance();
+                Ok(Pattern::Literal(Literal::Float(value)))
+            }
+            TokenKind::True => {
+                self.advance();
+                Ok(Pattern::Literal(Literal::Bool(true)))
+            }
+            TokenKind::False => {
+                self.advance();
+                Ok(Pattern::Literal(Literal::Bool(false)))
+            }
+            TokenKind::Minus => {
+                self.advance();
+                match self.peek() {
+                    TokenKind::Int(value) => {
+                        self.advance();
+                        Ok(Pattern::Literal(Literal::Int(-value)))
+                    }
+                    TokenKind::Float(value) => {
+                        self.advance();
+                        Ok(Pattern::Literal(Literal::Float(-value)))
+                    }
+                    other => Err(self.err(format!("expected numeric literal after '-' in pattern, got {:?}", other)))
+                }
+            }
+            TokenKind::Identifier(_) => {
+                let name = self.parse_identifier()?;
+                if name.value == "_" {
+                    return Ok(Pattern::Wildcard);
+                }
+                if self.peek_is(TokenKind::LParen) {
+                    let args = self.parse_comma_list(TokenKind::LParen, TokenKind::RParen, "pattern", |p| p.parse_pattern())?;
+                    return Ok(Pattern::Constructor { name, args });
+                }
+                Ok(Pattern::Identifier(name))
+            }
+            TokenKind::LBracket => self.parse_array_pattern(),
+            other => Err(self.err(format!("expected pattern, got {:?}", other)))
+        }
+    }
+
+    fn parse_array_pattern(&mut self) -> Result<Pattern, ParseError> {
+        let elements = self.parse_comma_list(TokenKind::LBracket, TokenKind::RBracket, "pattern", |p| {
+            if !p.peek_is(TokenKind::DotDot) {
+                return p.parse_pattern();
+            }
+            p.advance();
+            let name = if matches!(p.peek(), TokenKind::Identifier(_)) {
+                Some(p.parse_identifier()?)
+            } else {
+                None
+            };
+            Ok(Pattern::Rest(name))
+        })?;
+
+        let rest_count = elements.iter().filter(|e| matches!(e, Pattern::Rest(_))).count();
+        if rest_count > 1 {
+            return Err(self.err("array pattern can have at most one rest pattern '..'"));
+        }
+        if rest_count == 1 && !matches!(elements.last(), Some(Pattern::Rest(_))) {
+            return Err(self.err("rest pattern '..' must be the last element of an array pattern"));
+        }
+
+        Ok(Pattern::Array(elements))
     }
 }
