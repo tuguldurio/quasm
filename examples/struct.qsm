@@ -25,7 +25,7 @@ func perimeter(r: Rect) -> Float {
     2.0 * (r.width + r.height)
 }
 
-func contains(r: Rect, p: Point) -> bool {
+func contains(r: Rect, p: Point) -> Bool {
     p.x >= r.origin.x && p.x <= r.origin.x + r.width && p.y >= r.origin.y && p.y <= r.origin.y + r.height
 }
 
