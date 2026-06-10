@@ -31,7 +31,7 @@ impl Parser {
     }
 
     fn peek_is(&self, kind: TokenKind) -> bool {
-        self.peek() == kind
+        self.tokens.get(self.pos).map(|t| &t.kind).unwrap_or(&TokenKind::Eof) == &kind
     }
 
     fn peek_until(&self, kind: TokenKind) -> bool {
@@ -106,6 +106,34 @@ impl Parser {
         self.consume(close)?;
         Ok(items)
     }
+
+    fn parse_identifier(&mut self) -> Result<Identifier, ParseError> {
+        match self.peek() {
+            TokenKind::Identifier(value) => {
+                self.advance();
+                Ok(Identifier { value })
+            }
+            other => Err(self.err(format!("expected identifier, got {:?}", other)))
+        }
+    }
+
+    // Parses a {...} body of newline separated items
+    fn parse_braced_list<T, F>(&mut self, label: &str, mut parse_item: F) -> Result<Vec<T>, ParseError>
+    where
+        F: FnMut(&mut Self) -> Result<T, ParseError>,
+    {
+        self.consume(TokenKind::LBrace)?;
+        self.skip_newlines();
+        let mut items = Vec::new();
+
+        while self.peek_until(TokenKind::RBrace) {
+            items.push(parse_item(self)?);
+            self.expect_newline(label)?;
+        }
+
+        self.consume(TokenKind::RBrace)?;
+        Ok(items)
+    }
 }
 
 impl Parser {
@@ -166,24 +194,21 @@ impl Parser {
     fn parse_type_decl(&mut self) -> Result<TypeStmt, ParseError> {
         self.consume(TokenKind::Type)?;
         let name = self.parse_identifier()?;
-
-        let ty_params = if self.peek_is(TokenKind::LParen) {
-            self.parse_comma_list(TokenKind::LParen, TokenKind::RParen, "type parameter", |p| p.parse_identifier())?
-        } else {
-            Vec::new()
-        };
-
-        self.consume(TokenKind::LBrace)?;
-        self.skip_newlines();
-
-        let mut variants = Vec::new();
-        while self.peek_until(TokenKind::RBrace) {
-            variants.push(self.parse_type_variant()?);
-            self.expect_newline("variant")?;
-        }
-
-        self.consume(TokenKind::RBrace)?;
+        let ty_params = self.parse_ty_params()?;
+        let variants = self.parse_braced_list("variant", |p| p.parse_type_variant())?;
         Ok(TypeStmt { name, ty_params, variants })
+    }
+
+    // type parameter list of type/struct declaration
+    fn parse_ty_params(&mut self) -> Result<Vec<Identifier>, ParseError> {
+        if !self.peek_is(TokenKind::LParen) {
+            return Ok(Vec::new());
+        }
+        let params = self.parse_comma_list(TokenKind::LParen, TokenKind::RParen, "type parameter", |p| p.parse_identifier())?;
+        if params.is_empty() {
+            return Err(self.err("type parameter list cannot be empty"));
+        }
+        Ok(params)
     }
 
     fn parse_type_variant(&mut self) -> Result<TypeVariant, ParseError> {
@@ -201,17 +226,9 @@ impl Parser {
     fn parse_struct_decl(&mut self) -> Result<StructStmt, ParseError> {
         self.consume(TokenKind::Struct)?;
         let name = self.parse_identifier()?;
-        self.consume(TokenKind::LBrace)?;
-        self.skip_newlines();
-
-        let mut fields = Vec::new();
-        while self.peek_until(TokenKind::RBrace) {
-            fields.push(self.parse_struct_field()?);
-            self.expect_newline("field")?;
-        }
-
-        self.consume(TokenKind::RBrace)?;
-        Ok(StructStmt { name, fields })
+        let ty_params = self.parse_ty_params()?;
+        let fields = self.parse_braced_list("field", |p| p.parse_struct_field())?;
+        Ok(StructStmt { name, ty_params, fields })
     }
 
     fn parse_struct_field(&mut self) -> Result<StructField, ParseError> {
@@ -237,22 +254,36 @@ impl Parser {
                 self.consume(TokenKind::RBracket)?;
                 Ok(Type::Array(Box::new(inner)))
             }
-            TokenKind::Identifier(_) => Ok(Type::Named(self.parse_identifier()?)),
+            TokenKind::Func => {
+                self.advance();
+                let params = self.parse_comma_list(TokenKind::LParen, TokenKind::RParen, "parameter type", |p| p.parse_type())?;
+                let ret = if self.peek_is(TokenKind::Arrow) {
+                    self.advance();
+                    Some(Box::new(self.parse_type()?))
+                } else {
+                    None
+                };
+                Ok(Type::Func { params, ret })
+            }
+            TokenKind::Identifier(_) => {
+                let name = self.parse_identifier()?;
+                let args = if self.peek_is(TokenKind::LParen) {
+                    let args = self.parse_comma_list(TokenKind::LParen, TokenKind::RParen, "type argument", |p| p.parse_type())?;
+                    if args.is_empty() {
+                        return Err(self.err("type argument list cannot be empty"));
+                    }
+                    args
+                } else {
+                    Vec::new()
+                };
+                Ok(Type::Named { name, args })
+            }
             other => Err(self.err(format!("expected type, got {:?}", other)))
         }
     }
 
     fn parse_block(&mut self) -> Result<Block, ParseError> {
-        self.consume(TokenKind::LBrace)?;
-        let mut stmts = Vec::new();
-        self.skip_newlines();
-
-        while self.peek_until(TokenKind::RBrace) {
-            stmts.push(self.parse_statement()?);
-            self.expect_newline("statement")?;
-        }
-
-        self.consume(TokenKind::RBrace)?;
+        let stmts = self.parse_braced_list("statement", |p| p.parse_statement())?;
         Ok(Block { stmts })
     }
 }

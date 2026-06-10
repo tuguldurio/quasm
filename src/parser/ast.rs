@@ -96,6 +96,7 @@ pub struct TypeVariant {
 #[derive(Debug)]
 pub struct StructStmt {
     pub name: Identifier,
+    pub ty_params: Vec<Identifier>,
     pub fields: Vec<StructField>
 }
 
@@ -105,10 +106,18 @@ pub struct StructField {
     pub ty: Type
 }
 
+// Lowercase named types are type variables, uppercase are concrete types.
 #[derive(Debug)]
 pub enum Type {
-    Named(Identifier),
-    Array(Box<Type>)
+    Named {
+        name: Identifier,
+        args: Vec<Type>
+    },
+    Array(Box<Type>),
+    Func {
+        params: Vec<Type>,
+        ret: Option<Box<Type>>
+    }
 }
 
 #[derive(Debug, Clone, Copy, PartialEq)]

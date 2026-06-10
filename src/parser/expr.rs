@@ -203,14 +203,4 @@ impl Parser {
     fn parse_call_args(&mut self) -> Result<Vec<Expr>, ParseError> {
         self.parse_comma_list(TokenKind::LParen, TokenKind::RParen, "argument", |p| p.parse_expr())
     }
-
-    pub(super) fn parse_identifier(&mut self) -> Result<Identifier, ParseError> {
-        match self.peek() {
-            TokenKind::Identifier(value) => {
-                self.advance();
-                Ok(Identifier { value })
-            }
-            other => Err(self.err(format!("expected identifier, got {:?}", other)))
-        }
-    }
 }
