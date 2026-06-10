@@ -141,19 +141,19 @@ impl Parser {
         match self.peek() {
             TokenKind::Int(value) => {
                 self.advance();
-                Ok(Expr::Int(value))
+                Ok(Expr::Literal(Literal::Int(value)))
             }
             TokenKind::Float(value) => {
                 self.advance();
-                Ok(Expr::Float(value))
+                Ok(Expr::Literal(Literal::Float(value)))
             }
             TokenKind::True => {
                 self.advance();
-                Ok(Expr::Bool(true))
+                Ok(Expr::Literal(Literal::Bool(true)))
             }
             TokenKind::False => {
                 self.advance();
-                Ok(Expr::Bool(false))
+                Ok(Expr::Literal(Literal::Bool(false)))
             }
             TokenKind::LParen => {
                 self.advance();

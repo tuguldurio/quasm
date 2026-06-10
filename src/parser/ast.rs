@@ -33,7 +33,6 @@ pub struct Param {
     pub ty: Type
 }
 
-// Statements in a block are newline-separated; the last Stmt::Expr is the implicit return value.
 #[derive(Debug)]
 pub struct Block {
     pub stmts: Vec<Stmt>
@@ -41,9 +40,7 @@ pub struct Block {
 
 #[derive(Debug)]
 pub enum Expr {
-    Int(i64),
-    Float(f64),
-    Bool(bool),
+    Literal(Literal),
     Identifier(Identifier),
     Array(Vec<Expr>),
     Block(Block),
@@ -73,6 +70,13 @@ pub enum Expr {
         then_block: Block,
         else_branch: Option<Box<Expr>>
     }
+}
+
+#[derive(Debug, Clone, Copy, PartialEq)]
+pub enum Literal {
+    Int(i64),
+    Float(f64),
+    Bool(bool)
 }
 
 #[derive(Debug)]
