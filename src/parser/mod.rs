@@ -3,6 +3,7 @@ mod expr;
 mod stmt;
 mod types;
 
+use crate::common::span::{Pos, Span};
 use crate::lexer::{Token, TokenKind};
 use ast::*;
 
@@ -14,7 +15,7 @@ pub struct Parser {
 #[derive(Debug)]
 pub struct ParseError {
     pub message: String,
-    pub span: Option<std::ops::Range<usize>>
+    pub span: Span
 }
 
 impl Parser {
@@ -56,12 +57,20 @@ impl Parser {
         }
     }
 
-    fn current_span(&self) -> Option<std::ops::Range<usize>> {
-        self.tokens.get(self.pos).map(|t| t.span.clone())
+    pub(super) fn cur_span(&self) -> Span {
+        self.tokens.get(self.pos.min(self.tokens.len() - 1)).unwrap().span
+    }
+
+    fn prev_end(&self) -> Pos {
+        self.tokens[self.pos.saturating_sub(1)].span.end
+    }
+
+    pub(super) fn span_from(&self, start: Pos) -> Span {
+        Span { start, end: self.prev_end() }
     }
 
     fn err(&self, msg: impl Into<String>) -> ParseError {
-        ParseError { message: msg.into(), span: self.current_span() }
+        ParseError { message: msg.into(), span: self.cur_span() }
     }
 
     fn expect_newline(&mut self, context: &str) -> Result<(), ParseError> {
@@ -132,8 +141,9 @@ impl Parser {
     fn parse_identifier(&mut self) -> Result<Identifier, ParseError> {
         match self.peek() {
             TokenKind::Identifier(value) => {
+                let span = self.cur_span();
                 self.advance();
-                Ok(Identifier { value })
+                Ok(Identifier { value, span })
             }
             other => Err(self.err(format!("expected identifier, got {:?}", other)))
         }

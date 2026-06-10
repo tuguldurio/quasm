@@ -1,3 +1,5 @@
+use crate::common::span::Span;
+
 #[derive(Debug)]
 pub struct Program {
     pub statements: Vec<Stmt>
@@ -35,11 +37,18 @@ pub struct Param {
 
 #[derive(Debug)]
 pub struct Block {
-    pub stmts: Vec<Stmt>
+    pub stmts: Vec<Stmt>,
+    pub span: Span
 }
 
 #[derive(Debug)]
-pub enum Expr {
+pub struct Expr {
+    pub kind: ExprKind,
+    pub span: Span
+}
+
+#[derive(Debug)]
+pub enum ExprKind {
     Literal(Literal),
     Identifier(Identifier),
     Array(Vec<Expr>),
@@ -88,9 +97,15 @@ pub struct MatchArm {
     pub body: Expr
 }
 
+#[derive(Debug)]
+pub struct Pattern {
+    pub kind: PatternKind,
+    pub span: Span
+}
+
 // A bare identifier pattern may be a binding or a unit constructor; sema decides.
 #[derive(Debug)]
-pub enum Pattern {
+pub enum PatternKind {
     Wildcard,
     Literal(Literal),
     Identifier(Identifier),
@@ -114,7 +129,8 @@ pub enum Literal {
 
 #[derive(Debug)]
 pub struct Identifier {
-    pub value: String
+    pub value: String,
+    pub span: Span
 }
 
 #[derive(Debug)]

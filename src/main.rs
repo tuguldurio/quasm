@@ -18,7 +18,7 @@ fn main() {
 
     let (tokens, lexer_errors) = lexer::lex(&src);
     for error in &lexer_errors {
-        eprintln!("lex error: {} {:?}", error.message, error.span);
+        eprintln!("lex error: {} at {}", error.message, error.span);
     }
 
     if args.debug {
@@ -28,7 +28,7 @@ fn main() {
         });
         let tokens_out: String = tokens
             .iter()
-            .map(|t| format!("{:?} {:?}", t.kind, t.span))
+            .map(|t| format!("{:?} {}", t.kind, t.span))
             .collect::<Vec<_>>()
             .join("\n");
         fs::write("build/tokens.txt", tokens_out).unwrap_or_else(|e| {
@@ -45,6 +45,6 @@ fn main() {
                 });
             }
         }
-        Err(e) => eprintln!("parse error: {} {:?}", e.message, e.span),
+        Err(e) => eprintln!("parse error: {} at {}", e.message, e.span),
     }
 }
