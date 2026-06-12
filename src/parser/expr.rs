@@ -137,9 +137,15 @@ impl Parser {
             match self.peek() {
                 TokenKind::Dot => {
                     self.advance();
-                    let field = self.parse_identifier()?;
-                    let span = expr.span.to(field.span);
-                    expr = Expr { kind: ExprKind::FieldAccess { base: Box::new(expr), field }, span };
+                    let name = self.parse_identifier()?;
+                    if self.peek_is(TokenKind::LParen) {
+                        let args = self.parse_call_args()?;
+                        let span = self.span_from(expr.span.start);
+                        expr = Expr { kind: ExprKind::UfcsCall { base: Box::new(expr), callee: name, args }, span };
+                    } else {
+                        let span = expr.span.to(name.span);
+                        expr = Expr { kind: ExprKind::FieldAccess { base: Box::new(expr), field: name }, span };
+                    }
                 }
                 TokenKind::LParen => {
                     let args = self.parse_call_args()?;

@@ -66,6 +66,11 @@ pub enum ExprKind {
         callee: Box<Expr>,
         args: Vec<Expr>
     },
+    UfcsCall {
+        base: Box<Expr>,
+        callee: Identifier,
+        args: Vec<Expr>
+    },
     Index {
         base: Box<Expr>,
         index: Box<Expr>
