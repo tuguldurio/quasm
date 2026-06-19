@@ -18,6 +18,10 @@ pub struct ParseError {
     pub span: Span
 }
 
+pub fn parse(tokens: Vec<Token>) -> Result<Program, ParseError> {
+    Parser::new(tokens).parse_program()
+}
+
 impl Parser {
     pub fn new(tokens: Vec<Token>) -> Self {
         Self { tokens, pos: 0 }

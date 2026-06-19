@@ -1,5 +1,5 @@
 use clap::Parser as ClapParser;
-use quasm::{lexer, parser::Parser};
+use quasm::{lexer, parser, sema};
 use std::{fs, path::PathBuf};
 
 #[derive(ClapParser)]
@@ -42,8 +42,7 @@ fn main() {
         write_debug("tokens.txt", &tokens_out);
     }
 
-    let mut parser = Parser::new(tokens);
-    let ast = match parser.parse_program() {
+    let ast = match parser::parse(tokens) {
         Ok(program) => program,
         Err(e) => {
             eprintln!("parse error: {} at {}", e.message, e.span);
@@ -53,5 +52,17 @@ fn main() {
 
     if args.debug {
         write_debug("ast.txt", &format!("{:#?}", ast));
+    }
+
+    let tast = match sema::check(ast) {
+        Ok(tast) => tast,
+        Err(e) => {
+            eprintln!("sema error: {} at {}", e.message, e.span);
+            std::process::exit(1);
+        }
+    };
+
+    if args.debug {
+        write_debug("tast.txt", &format!("{:#?}", tast));
     }
 }

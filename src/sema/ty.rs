@@ -1,6 +1,6 @@
 #[allow(unused)]
-
-enum Ty {
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub enum Ty {
     Int,
     Float,
     Bool,
