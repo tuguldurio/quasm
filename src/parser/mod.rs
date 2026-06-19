@@ -23,6 +23,18 @@ impl Parser {
         Self { tokens, pos: 0 }
     }
 
+    pub fn parse_program(&mut self) -> Result<Program, ParseError> {
+        let mut statements = Vec::new();
+        self.skip_newlines();
+
+        while !self.peek_is(TokenKind::Eof) {
+            statements.push(self.parse_statement()?);
+            self.skip_newlines();
+        }
+
+        Ok(Program { statements })
+    }
+
     fn peek(&self) -> TokenKind {
         self.tokens.get(self.pos).map(|t| t.kind.clone()).unwrap_or(TokenKind::Eof)
     }

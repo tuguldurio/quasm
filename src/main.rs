@@ -9,6 +9,13 @@ struct Args {
     debug: bool
 }
 
+fn write_debug(name: &str, contents: &str) {
+    let result = fs::create_dir_all("build").and_then(|_| fs::write(format!("build/{name}"), contents));
+    if let Err(e) = result {
+        eprintln!("error writing build/{name}: {e}");
+    }
+}
+
 fn main() {
     let args = Args::parse();
     let src = fs::read_to_string(&args.file).unwrap_or_else(|e| {
@@ -27,29 +34,24 @@ fn main() {
     };
 
     if args.debug {
-        fs::create_dir_all("build").unwrap_or_else(|e| {
-            eprintln!("error creating build/: {}", e);
-            std::process::exit(1);
-        });
         let tokens_out: String = tokens
             .iter()
             .map(|t| format!("{:?} {}", t.kind, t.span))
             .collect::<Vec<_>>()
             .join("\n");
-        fs::write("build/tokens.txt", tokens_out).unwrap_or_else(|e| {
-            eprintln!("error writing build/tokens.txt: {}", e);
-        });
+        write_debug("tokens.txt", &tokens_out);
     }
 
     let mut parser = Parser::new(tokens);
-    match parser.parse_program() {
-        Ok(program) => {
-            if args.debug {
-                fs::write("build/ast.txt", format!("{:#?}", program)).unwrap_or_else(|e| {
-                    eprintln!("error writing build/ast.txt: {}", e);
-                });
-            }
+    let ast = match parser.parse_program() {
+        Ok(program) => program,
+        Err(e) => {
+            eprintln!("parse error: {} at {}", e.message, e.span);
+            std::process::exit(1);
         }
-        Err(e) => eprintln!("parse error: {} at {}", e.message, e.span),
+    };
+
+    if args.debug {
+        write_debug("ast.txt", &format!("{:#?}", ast));
     }
 }
