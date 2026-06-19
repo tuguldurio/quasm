@@ -16,10 +16,15 @@ fn main() {
         std::process::exit(1);
     });
 
-    let (tokens, lexer_errors) = lexer::lex(&src);
-    for error in &lexer_errors {
-        eprintln!("lex error: {} at {}", error.message, error.span);
-    }
+    let tokens = match lexer::lex(&src) {
+        Ok(tokens) => tokens,
+        Err(lexer_errors) => {
+            for error in &lexer_errors {
+                eprintln!("lex error: {} at {}", error.message, error.span);
+            }
+            std::process::exit(1);
+        }
+    };
 
     if args.debug {
         fs::create_dir_all("build").unwrap_or_else(|e| {

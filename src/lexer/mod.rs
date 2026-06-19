@@ -16,7 +16,7 @@ pub struct LexError {
     pub message: String
 }
 
-pub fn lex(src: &str) -> (Vec<Token>, Vec<LexError>) {
+pub fn lex(src: &str) -> Result<Vec<Token>, Vec<LexError>> {
     let mut tokens = Vec::new();
     let mut errors = Vec::new();
     let line_map = LineMap::new(src);
@@ -43,5 +43,9 @@ pub fn lex(src: &str) -> (Vec<Token>, Vec<LexError>) {
     let end = src.len();
     tokens.push(Token { kind: TokenKind::Eof, literal: String::new(), span: line_map.span(end..end) });
 
-    (tokens, errors)
+    if errors.is_empty() {
+        Ok(tokens)
+    } else {
+        Err(errors)
+    }
 }
