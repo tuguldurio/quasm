@@ -1,4 +1,5 @@
 use crate::common::span::Span;
+use crate::common::ast::{Literal, BinOpKind, UnaryOpKind};
 
 #[derive(Debug)]
 pub struct Program {
@@ -54,12 +55,12 @@ pub enum ExprKind {
     Array(Vec<Expr>),
     Block(Block),
     BinaryOp {
-        op: BinOp,
+        op: BinOpKind,
         left: Box<Expr>,
         right: Box<Expr>
     },
     UnaryOp {
-        op: UnaryOp,
+        op: UnaryOpKind,
         operand: Box<Expr>
     },
     Call {
@@ -125,13 +126,6 @@ pub enum PatternKind {
     Or(Vec<Pattern>)
 }
 
-#[derive(Debug, Clone, Copy, PartialEq)]
-pub enum Literal {
-    Int(i64),
-    Float(f64),
-    Bool(bool)
-}
-
 #[derive(Debug)]
 pub struct Identifier {
     pub value: String,
@@ -176,22 +170,4 @@ pub enum Type {
         params: Vec<Type>,
         ret: Option<Box<Type>>
     }
-}
-
-#[derive(Debug, Clone, Copy, PartialEq)]
-pub enum BinOp {
-    // arithmetic
-    Add, Sub, Mul, Div,
-    // comparison
-    Lt, Gt, LtEq, GtEq,
-    // equality
-    EqEq, NotEq,
-    // logical
-    And, Or
-}
-
-#[derive(Debug, Clone, Copy, PartialEq)]
-pub enum UnaryOp {
-    Neg,
-    Not
 }

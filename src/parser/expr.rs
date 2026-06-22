@@ -1,3 +1,4 @@
+use crate::common::ast::{Literal, BinOpKind, UnaryOpKind};
 use crate::common::span::{Pos, Span};
 use crate::lexer::TokenKind;
 use super::ast::*;
@@ -5,7 +6,7 @@ use super::Parser;
 use super::ParseError;
 
 impl Parser {
-    fn binary(op: BinOp, left: Expr, right: Expr) -> Expr {
+    fn binary(op: BinOpKind, left: Expr, right: Expr) -> Expr {
         let span = left.span.to(right.span);
         Expr { kind: ExprKind::BinaryOp { op, left: Box::new(left), right: Box::new(right) }, span }
     }
@@ -32,7 +33,7 @@ impl Parser {
         while self.peek_is(TokenKind::Or) {
             self.advance();
             let right = self.parse_and()?;
-            left = Self::binary(BinOp::Or, left, right);
+            left = Self::binary(BinOpKind::Or, left, right);
         }
 
         Ok(left)
@@ -44,7 +45,7 @@ impl Parser {
         while self.peek_is(TokenKind::And) {
             self.advance();
             let right = self.parse_equality()?;
-            left = Self::binary(BinOp::And, left, right);
+            left = Self::binary(BinOpKind::And, left, right);
         }
 
         Ok(left)
@@ -54,8 +55,8 @@ impl Parser {
         let mut left = self.parse_comparison()?;
         loop {
             let op = match self.peek() {
-                TokenKind::EqEq => BinOp::EqEq,
-                TokenKind::BangEq => BinOp::NotEq,
+                TokenKind::EqEq => BinOpKind::EqEq,
+                TokenKind::BangEq => BinOpKind::NotEq,
                 _ => break
             };
             self.advance();
@@ -69,10 +70,10 @@ impl Parser {
         let mut left = self.parse_additive()?;
         loop {
             let op = match self.peek() {
-                TokenKind::Lt => BinOp::Lt,
-                TokenKind::Gt => BinOp::Gt,
-                TokenKind::LtEq => BinOp::LtEq,
-                TokenKind::GtEq => BinOp::GtEq,
+                TokenKind::Lt => BinOpKind::Lt,
+                TokenKind::Gt => BinOpKind::Gt,
+                TokenKind::LtEq => BinOpKind::LtEq,
+                TokenKind::GtEq => BinOpKind::GtEq,
                 _ => break
             };
             self.advance();
@@ -87,8 +88,8 @@ impl Parser {
 
         loop {
             let op = match self.peek() {
-                TokenKind::Plus => BinOp::Add,
-                TokenKind::Minus => BinOp::Sub,
+                TokenKind::Plus => BinOpKind::Add,
+                TokenKind::Minus => BinOpKind::Sub,
                 _ => break,
             };
             self.advance();
@@ -104,8 +105,8 @@ impl Parser {
 
         loop {
             let op = match self.peek() {
-                TokenKind::Asterisk => BinOp::Mul,
-                TokenKind::Slash => BinOp::Div,
+                TokenKind::Asterisk => BinOpKind::Mul,
+                TokenKind::Slash => BinOpKind::Div,
                 _ => break,
             };
             self.advance();
@@ -118,8 +119,8 @@ impl Parser {
 
     fn parse_unary(&mut self) -> Result<Expr, ParseError> {
         let op = match self.peek() {
-            TokenKind::Minus => UnaryOp::Neg,
-            TokenKind::Bang => UnaryOp::Not,
+            TokenKind::Minus => UnaryOpKind::Neg,
+            TokenKind::Bang => UnaryOpKind::Not,
             _ => return self.parse_postfix(),
         };
 
