@@ -19,14 +19,14 @@ pub enum Stmt {
 pub struct FuncStmt {
     pub name: Identifier,
     pub params: Vec<Param>,
-    pub ret: Option<Type>,
+    pub ret: Option<Ty>,
     pub body: Block
 }
 
 #[derive(Debug)]
 pub struct LetStmt {
     pub name: Identifier,
-    pub ty: Option<Type>,
+    pub ty: Option<Ty>,
     pub value: Expr
 }
 
@@ -40,7 +40,7 @@ pub struct TypeStmt {
 #[derive(Debug)]
 pub struct TypeVariant {
     pub name: Identifier,
-    pub ty_fields: Vec<Type>
+    pub ty_fields: Vec<Ty>
 }
 
 #[derive(Debug)]
@@ -53,13 +53,13 @@ pub struct StructStmt {
 #[derive(Debug)]
 pub struct StructField {
     pub name: Identifier,
-    pub ty: Type
+    pub ty: Ty
 }
 
 #[derive(Debug)]
 pub struct Param {
     pub name: Identifier,
-    pub ty: Option<Type>
+    pub ty: Option<Ty>
 }
 
 #[derive(Debug)]
@@ -117,7 +117,7 @@ pub enum ExprKind {
     },
     Closure {
         params: Vec<Param>,
-        ret: Option<Type>,
+        ret: Option<Ty>,
         body: Box<Expr>
     }
 }
@@ -160,14 +160,14 @@ pub struct Identifier {
 
 // Lowercase named types are type variables, uppercase are concrete types.
 #[derive(Debug)]
-pub enum Type {
+pub enum Ty {
     Named {
         name: Identifier,
-        args: Vec<Type>
+        args: Vec<Ty>
     },
-    Array(Box<Type>),
+    Array(Box<Ty>),
     Func {
-        params: Vec<Type>,
-        ret: Option<Box<Type>>
+        params: Vec<Ty>,
+        ret: Option<Box<Ty>>
     }
 }

@@ -4,7 +4,7 @@ use super::Parser;
 use super::ParseError;
 
 impl Parser {
-    pub(super) fn parse_type_annotation(&mut self) -> Result<Option<Type>, ParseError> {
+    pub(super) fn parse_type_annotation(&mut self) -> Result<Option<Ty>, ParseError> {
         if !self.peek_is(TokenKind::Colon) {
             return Ok(None);
         }
@@ -24,13 +24,13 @@ impl Parser {
         Ok(params)
     }
 
-    pub(super) fn parse_type(&mut self) -> Result<Type, ParseError> {
+    pub(super) fn parse_type(&mut self) -> Result<Ty, ParseError> {
         match self.peek() {
             TokenKind::LBracket => {
                 self.advance();
                 let inner = self.parse_type()?;
                 self.consume(TokenKind::RBracket)?;
-                Ok(Type::Array(Box::new(inner)))
+                Ok(Ty::Array(Box::new(inner)))
             }
             TokenKind::Func => {
                 self.advance();
@@ -41,7 +41,7 @@ impl Parser {
                 } else {
                     None
                 };
-                Ok(Type::Func { params, ret })
+                Ok(Ty::Func { params, ret })
             }
             TokenKind::Identifier(_) => {
                 let name = self.parse_identifier()?;
@@ -54,7 +54,7 @@ impl Parser {
                 } else {
                     Vec::new()
                 };
-                Ok(Type::Named { name, args })
+                Ok(Ty::Named { name, args })
             }
             other => Err(self.err(format!("expected type, got {:?}", other)))
         }

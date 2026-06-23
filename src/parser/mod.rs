@@ -1,7 +1,7 @@
 pub mod ast;
 mod expr;
 mod stmt;
-mod types;
+mod ty;
 
 use crate::common::span::{Pos, Span};
 use crate::lexer::{Token, TokenKind};
