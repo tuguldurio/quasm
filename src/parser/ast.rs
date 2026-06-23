@@ -16,6 +16,14 @@ pub enum Stmt {
 }
 
 #[derive(Debug)]
+pub struct FuncStmt {
+    pub name: Identifier,
+    pub params: Vec<Param>,
+    pub ret: Option<Type>,
+    pub body: Block
+}
+
+#[derive(Debug)]
 pub struct LetStmt {
     pub name: Identifier,
     pub ty: Option<Type>,
@@ -23,11 +31,29 @@ pub struct LetStmt {
 }
 
 #[derive(Debug)]
-pub struct FuncStmt {
+pub struct TypeStmt {
     pub name: Identifier,
-    pub params: Vec<Param>,
-    pub ret: Option<Type>,
-    pub body: Block
+    pub ty_params: Vec<Identifier>,
+    pub variants: Vec<TypeVariant>
+}
+
+#[derive(Debug)]
+pub struct TypeVariant {
+    pub name: Identifier,
+    pub ty_fields: Vec<Type>
+}
+
+#[derive(Debug)]
+pub struct StructStmt {
+    pub name: Identifier,
+    pub ty_params: Vec<Identifier>,
+    pub fields: Vec<StructField>
+}
+
+#[derive(Debug)]
+pub struct StructField {
+    pub name: Identifier,
+    pub ty: Type
 }
 
 #[derive(Debug)]
@@ -130,32 +156,6 @@ pub enum PatternKind {
 pub struct Identifier {
     pub value: String,
     pub span: Span
-}
-
-#[derive(Debug)]
-pub struct TypeStmt {
-    pub name: Identifier,
-    pub ty_params: Vec<Identifier>,
-    pub variants: Vec<TypeVariant>
-}
-
-#[derive(Debug)]
-pub struct TypeVariant {
-    pub name: Identifier,
-    pub ty_fields: Vec<Type>
-}
-
-#[derive(Debug)]
-pub struct StructStmt {
-    pub name: Identifier,
-    pub ty_params: Vec<Identifier>,
-    pub fields: Vec<StructField>
-}
-
-#[derive(Debug)]
-pub struct StructField {
-    pub name: Identifier,
-    pub ty: Type
 }
 
 // Lowercase named types are type variables, uppercase are concrete types.
