@@ -24,10 +24,16 @@ pub struct FuncStmt {
 }
 
 #[derive(Debug)]
+pub struct Param {
+    pub name: Identifier,
+    pub ty: Option<Ty>
+}
+
+#[derive(Debug)]
 pub struct LetStmt {
     pub name: Identifier,
-    pub ty: Option<Ty>,
-    pub value: Expr
+    pub value: Expr,
+    pub ty: Option<Ty>
 }
 
 #[derive(Debug)]
@@ -54,12 +60,6 @@ pub struct StructStmt {
 pub struct StructField {
     pub name: Identifier,
     pub ty: Ty
-}
-
-#[derive(Debug)]
-pub struct Param {
-    pub name: Identifier,
-    pub ty: Option<Ty>
 }
 
 #[derive(Debug)]
