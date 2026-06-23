@@ -10,7 +10,7 @@ pub struct LocalId(pub u32);
 
 #[derive(Debug)]
 pub struct Program {
-    pub statements: Vec<Stmt>
+    pub stmts: Vec<Stmt>
 }
 
 #[derive(Debug)]

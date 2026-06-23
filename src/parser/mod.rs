@@ -28,15 +28,15 @@ impl Parser {
     }
 
     pub fn parse_program(&mut self) -> Result<Program, ParseError> {
-        let mut statements = Vec::new();
+        let mut stmts = Vec::new();
         self.skip_newlines();
 
         while !self.peek_is(TokenKind::Eof) {
-            statements.push(self.parse_statement()?);
+            stmts.push(self.parse_statement()?);
             self.skip_newlines();
         }
 
-        Ok(Program { statements })
+        Ok(Program { stmts })
     }
 
     fn peek(&self) -> TokenKind {

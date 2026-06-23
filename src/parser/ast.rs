@@ -3,7 +3,7 @@ use crate::common::ast::{Literal, BinOpKind, UnaryOpKind};
 
 #[derive(Debug)]
 pub struct Program {
-    pub statements: Vec<Stmt>
+    pub stmts: Vec<Stmt>
 }
 
 #[derive(Debug)]
