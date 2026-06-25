@@ -3,9 +3,9 @@
 **Disclaimer:**
 In the process of rewriting in Rust!
 
-Quasm is a programming language designed to compile directly to WebAssembly (WASM). It aims to provide a simple and expressive syntax while leveraging the performance benefits of WebAssembly.
+Quasm is a programming language that compile to WebAssembly (WASM). It aims to provide a simple and expressive syntax.
 
-**Important Note: Quasm is "for fun" project and currently in its early, immature state and is not yet ready for any production use. The language may undergo significant changes.** [![justforfunnoreally.dev badge](https://img.shields.io/badge/justforfunnoreally-dev-9ff)](https://justforfunnoreally.dev)
+**Important Note: Quasm is personal "for fun" project** [![justforfunnoreally.dev badge](https://img.shields.io/badge/justforfunnoreally-dev-9ff)](https://justforfunnoreally.dev)
 
 ```
 func main() {
@@ -13,7 +13,7 @@ func main() {
     print(result)
 }
 
-func add(a: Int, b: Int): Int {
+func add(a: Int, b: Int) -> Int {
     a + b
 }
 ```
