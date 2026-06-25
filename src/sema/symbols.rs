@@ -26,4 +26,8 @@ impl SymbolTable {
         let func_id = self.funcs.len() as u64;
         self.funcs.insert(key, func_id);
     }
+
+    pub fn lookup_func(&mut self, name: String, first_param: Option<Ty>) -> u64 {
+        self.funcs[&FuncKey {name, first_param}]
+    }
 }

@@ -63,12 +63,11 @@ impl Sema {
     fn check_program(&mut self, ast: ast::Program) -> Result<tast::Program, SemaError> {
         let _ = ast;
 
-        // initial pass
+        // initial pass to register functions
         for stmt in &ast.stmts {
             match stmt {
                 ast::Stmt::Func(func) => {
                     let name = func.name.value.clone();
-
                     let first_param_ty = match func.params.first() {
                         Some(p) => {
                             Some(
@@ -124,6 +123,21 @@ impl Sema {
     }
 
     fn check_func(&mut self, func: ast::FuncStmt) -> Result<tast::Stmt, SemaError> {
+        let name = func.name.value.clone();
+        let first_param_ty = match func.params.first() {
+            Some(p) => {
+                Some(
+                    self.resolve_ty(
+                        &p.ty.as_ref()
+                        .expect("encountered None from func decl param type during sema")
+                    )?
+                )
+            }
+            None => None
+        };
+        
+        let id = self.sym_table.lookup_func(name, first_param_ty);
+        println!("FOUND EM {id}");
         Err(self.err("func not implemented yet", func.name.span))
     }
 
