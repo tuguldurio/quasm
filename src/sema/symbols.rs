@@ -8,7 +8,7 @@ struct FuncKey {
 }
 
 pub struct SymbolTable {
-    funcs: HashMap<FuncKey, usize>
+    funcs: HashMap<FuncKey, u64>
 }
 
 impl SymbolTable {
@@ -23,7 +23,7 @@ impl SymbolTable {
             name,
             first_param
         };
-        let func_id = self.funcs.len();
+        let func_id = self.funcs.len() as u64;
         self.funcs.insert(key, func_id);
     }
 }
