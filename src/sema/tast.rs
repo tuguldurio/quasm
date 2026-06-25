@@ -1,12 +1,7 @@
 use crate::common::ast::{Literal, BinOpKind, UnaryOpKind};
+use crate::parser::ast::Identifier;
 use crate::sema::ty::Ty;
 use crate::common::span::Span;
-
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub struct FuncId(pub u32);
-
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub struct LocalId(pub u32);
 
 #[derive(Debug)]
 pub struct Program {
@@ -22,15 +17,25 @@ pub enum Stmt {
 
 #[derive(Debug)]
 pub struct FuncStmt {
-    pub id: FuncId,
-    pub params: Vec<LocalId>,
+    pub id: u64,
+    pub name: Identifier,
+    pub params: Vec<Param>,
     pub body: Block
 }
 
 #[derive(Debug)]
+pub struct Param {
+    pub name: Identifier,
+    pub id: u64,
+    pub ty: Ty
+}
+
+#[derive(Debug)]
 pub struct LetStmt {
-    pub local: LocalId,
-    pub value: Expr
+    pub name: Identifier,
+    pub id: u64,
+    pub value: Expr,
+    pub ty: Ty
 }
 
 #[derive(Debug)]
@@ -49,8 +54,6 @@ pub struct Expr {
 #[derive(Debug)]
 pub enum ExprKind {
     Literal(Literal),
-    Local(LocalId),
-    Func(FuncId),
     Block(Block),
     BinaryOp {
         op: BinOpKind,
