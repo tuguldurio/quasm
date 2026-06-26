@@ -165,7 +165,28 @@ impl Sema {
     }
 
     fn check_let(&mut self, let_stmt: ast::LetStmt) -> Result<tast::Stmt, SemaError> {
-        Err(self.err("let not implemented yet", let_stmt.name.span))
+        let value = self.check_expr(let_stmt.value)?;
+
+        let ty = match &let_stmt.ty {
+            Some(annotation) => {
+                let annotation_ty = self.resolve_ty(annotation)?;
+                if annotation_ty != value.ty {
+                    return Err(self.err(
+                        format!(
+                            "Type mismatch for {}: expected `{:?}`, got `{:?}`",
+                            let_stmt.name.value, annotation_ty, value.ty
+                        ),
+                        let_stmt.name.span
+                    ));
+                }
+                annotation_ty
+            }
+            None => value.ty.clone()
+        };
+
+        let id = self.sym_table.define_var(&let_stmt.name.value, ty.clone());
+
+        Ok(tast::Stmt::Let(tast::LetStmt { id, value, ty }))
     }
 
     fn check_block(&mut self, block: ast::Block) -> Result<tast::Block, SemaError> {
