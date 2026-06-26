@@ -104,7 +104,7 @@ impl Sema {
 
     fn check_statement(&mut self, stmt: ast::Stmt) -> Result<tast::Stmt, SemaError> {
         match stmt {
-            ast::Stmt::Func(func) => self.check_func(func),
+            ast::Stmt::Func(func) => Ok(tast::Stmt::Func(self.check_func(func)?)),
             ast::Stmt::Let(let_stmt) => self.check_let(let_stmt),
             ast::Stmt::Type(type_stmt) => {
                 Err(self.err("type statement not implemented yet", type_stmt.name.span))
@@ -118,7 +118,7 @@ impl Sema {
         }
     }
 
-    fn check_func(&mut self, func: ast::FuncStmt) -> Result<tast::Stmt, SemaError> {
+    fn check_func(&mut self, func: ast::FuncStmt) -> Result<tast::FuncStmt, SemaError> {
         let (name, first_param_ty) = self.func_key(&func)?;
         let id = self.sym_table.lookup_func(name, first_param_ty);
 
@@ -128,16 +128,64 @@ impl Sema {
             params.push(tast::Param { name: param.name, id: params.len() as u64, ty });
         }
 
-        let body = tast::Block {
-            stmts: Vec::new(),
-            ty: Ty::Unit,
-            span: func.body.span
+        let ret_ty = match &func.ret {
+            Some(r) => self.resolve_ty(r)?,
+            None => Ty::Unit,
         };
 
-        Ok(tast::Stmt::Func(tast::FuncStmt { id, name: func.name, params, body }))
+        let body = self.check_block(func.body)?;
+
+        if body.ty != ret_ty {
+            return Err(self.err(
+                format!(
+                    "function `{}` returns `{:?}` but its body has type `{:?}`",
+                    func.name.value, ret_ty, body.ty
+                ),
+                body.span,
+            ));
+        }
+
+        Ok(tast::FuncStmt { id, name: func.name, params, body })
     }
 
     fn check_let(&mut self, let_stmt: ast::LetStmt) -> Result<tast::Stmt, SemaError> {
         Err(self.err("let not implemented yet", let_stmt.name.span))
+    }
+
+    fn check_block(&mut self, block: ast::Block) -> Result<tast::Block, SemaError> {
+        let span = block.span;
+
+        let mut stmts = Vec::new();
+        for stmt in block.stmts {
+            stmts.push(self.check_statement(stmt)?);
+        }
+
+        // a block evaluates to its trailing expression, otherwise to unit
+        let ty = match stmts.last() {
+            Some(tast::Stmt::Expr(expr)) => expr.ty.clone(),
+            _ => Ty::Unit,
+        };
+
+        Ok(tast::Block { stmts, ty, span })
+    }
+
+    fn check_expr(&mut self, expr: ast::Expr) -> Result<tast::Expr, SemaError> {
+        match expr.kind {
+            ast::ExprKind::Literal(lit) => {
+                let ty = match lit {
+                    Literal::Int(_) => Ty::Int,
+                    Literal::Float(_) => Ty::Float,
+                    Literal::Bool(_) => Ty::Bool,
+                };
+                Ok(tast::Expr { kind: tast::ExprKind::Literal(lit), ty })
+            }
+            ast::ExprKind::Block(block) => {
+                let block = self.check_block(block)?;
+                let ty = block.ty.clone();
+                Ok(tast::Expr { kind: tast::ExprKind::Block(block), ty })
+            }
+            // other expression kinds aren't checked yet
+            _ => Ok(tast::Expr { kind: tast::ExprKind::Error, ty: Ty::Unit }),
+        }
     }
 }
