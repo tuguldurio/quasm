@@ -32,6 +32,7 @@ pub struct Param {
 pub struct LetStmt {
     pub id: u64,
     pub value: Expr,
+    pub annot_ty: Ty,
     pub ty: Ty
 }
 
