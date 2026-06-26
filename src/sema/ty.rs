@@ -7,6 +7,6 @@ pub enum Ty {
     Unit,
     Array(Box<Ty>),
     Func { params: Vec<Ty>, ret: Box<Ty> },
-    Infer(u64)
+    Infer
     // ...
 }

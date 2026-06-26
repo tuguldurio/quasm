@@ -1,5 +1,4 @@
 use crate::common::ast::{Literal, BinOpKind, UnaryOpKind};
-use crate::parser::ast::Identifier;
 use crate::sema::ty::Ty;
 use crate::common::span::Span;
 
@@ -18,21 +17,19 @@ pub enum Stmt {
 #[derive(Debug)]
 pub struct FuncStmt {
     pub id: u64,
-    pub name: Identifier,
     pub params: Vec<Param>,
+    pub ret_ty: Ty,
     pub body: Block
 }
 
 #[derive(Debug)]
 pub struct Param {
-    pub name: Identifier,
     pub id: u64,
     pub ty: Ty
 }
 
 #[derive(Debug)]
 pub struct LetStmt {
-    pub name: Identifier,
     pub id: u64,
     pub value: Expr,
     pub ty: Ty

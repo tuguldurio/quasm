@@ -61,13 +61,16 @@ impl Sema {
         }
     }
 
-    fn func_key(&self, func: &ast::FuncStmt) -> Result<(String, Option<Ty>), SemaError> {
-        let name = func.name.value.clone();
-        let first_param_ty = match func.params.first() {
-            Some(p) => Some(self.resolve_ty(p.ty.as_ref().unwrap())?),
-            None => None,
-        };
-        Ok((name, first_param_ty))
+    fn resolve_params_ty(&self, func: &ast::FuncStmt) -> Result<Vec<Ty>, SemaError> {
+        let mut params_ty = Vec::new();
+        for param in &func.params {
+            let param_ty = match &param.ty {
+                Some(ty) => self.resolve_ty(ty)?,
+                None => Ty::Infer
+            };
+            params_ty.push(param_ty);
+        }
+        Ok(params_ty)
     }
 
     fn check_program(&mut self, ast: ast::Program) -> Result<tast::Program, SemaError> {
@@ -75,8 +78,13 @@ impl Sema {
         for stmt in &ast.stmts {
             match stmt {
                 ast::Stmt::Func(func) => {
-                    let (name, first_param_ty) = self.func_key(func)?;
-                    self.sym_table.define_func(name, first_param_ty);
+                    let name = func.name.value.clone();
+                    let params_ty = self.resolve_params_ty(&func)?;
+                    let ret = match &func.ret {
+                        Some(ret) => self.resolve_ty(ret)?,
+                        None => Ty::Unit
+                    };
+                    self.sym_table.define_func(&name, params_ty, ret);
                 }
                 ast::Stmt::Let(s) => {
                     return Err(self.err("Not implemented yet", s.name.span));
@@ -118,33 +126,40 @@ impl Sema {
     }
 
     fn check_func(&mut self, func: ast::FuncStmt) -> Result<tast::FuncStmt, SemaError> {
-        let (name, first_param_ty) = self.func_key(&func)?;
-        let id = self.sym_table.lookup_func(name, first_param_ty);
-
-        let mut params = Vec::new();
-        for param in func.params {
-            let ty = self.resolve_ty(&param.ty.unwrap())?;
-            params.push(tast::Param { name: param.name, id: params.len() as u64, ty });
-        }
-
-        let ret_ty = match &func.ret {
-            Some(r) => self.resolve_ty(r)?,
-            None => Ty::Unit
+        // lookup symtable
+        let name = func.name.value;
+        let first_param_ty = match func.params.first() {
+            Some(param) => Some(self.resolve_ty(param.ty.as_ref().unwrap())?),
+            None => None
         };
 
+        let Some(func_symbol) = self.sym_table.lookup_func(&name, first_param_ty) else {
+            return Err(self.err(format!("function `{}` is not declared", name), func.name.span));
+        };
+        let id = func_symbol.id;
+        let params_ty = func_symbol.params_ty.clone();
+        let ret_ty = func_symbol.ret_ty.clone();
+
+        // build params
+        let mut params = Vec::new();
+        for ty in params_ty {
+            params.push(tast::Param { id: params.len() as u64, ty });
+        }
+
+        // build body
         let body = self.check_block(func.body)?;
 
         if body.ty != ret_ty {
             return Err(self.err(
                 format!(
                     "function `{}` returns `{:?}` but its body has type `{:?}`",
-                    func.name.value, ret_ty, body.ty
+                    name, ret_ty, body.ty
                 ),
                 body.span
             ));
         }
 
-        Ok(tast::FuncStmt { id, name: func.name, params, body })
+        Ok(tast::FuncStmt { id, params, ret_ty, body })
     }
 
     fn check_let(&mut self, let_stmt: ast::LetStmt) -> Result<tast::Stmt, SemaError> {
@@ -182,6 +197,12 @@ impl Sema {
                 let block = self.check_block(block)?;
                 let ty = block.ty.clone();
                 Ok(tast::Expr { kind: tast::ExprKind::Block(block), ty })
+            }
+            ast::ExprKind::Identifier(identifier) => {
+                //TODO
+                // identifier.
+                // Ok(())
+                Ok(tast::Expr { kind: tast::ExprKind::Error, ty: Ty::Unit })
             }
             // other expression kinds aren't checked yet
             _ => Ok(tast::Expr { kind: tast::ExprKind::Error, ty: Ty::Unit })
