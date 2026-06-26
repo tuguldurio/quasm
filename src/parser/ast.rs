@@ -33,7 +33,7 @@ pub struct Param {
 pub struct LetStmt {
     pub name: Identifier,
     pub value: Expr,
-    pub ty: Option<Ty>
+    pub annot_ty: Option<Ty>
 }
 
 #[derive(Debug)]

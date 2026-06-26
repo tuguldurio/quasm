@@ -41,10 +41,10 @@ impl Parser {
     fn parse_let_statement(&mut self) -> Result<LetStmt, ParseError> {
         self.consume(TokenKind::Let)?;
         let name = self.parse_identifier()?;
-        let ty = self.parse_type_annotation()?;
+        let annot_ty = self.parse_type_annotation()?;
         self.consume(TokenKind::Eq)?;
         let value = self.parse_expr()?;
-        Ok(LetStmt { name, ty, value })
+        Ok(LetStmt { name, annot_ty, value })
     }
 
     fn parse_type_decl(&mut self) -> Result<TypeStmt, ParseError> {
