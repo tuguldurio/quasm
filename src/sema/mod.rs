@@ -63,10 +63,7 @@ impl Sema {
     fn func_key(&self, func: &ast::FuncStmt) -> Result<(String, Option<Ty>), SemaError> {
         let name = func.name.value.clone();
         let first_param_ty = match func.params.first() {
-            Some(p) => Some(self.resolve_ty(
-                p.ty.as_ref()
-                    .expect("encountered None from func decl param type during sema"),
-            )?),
+            Some(p) => Some(self.resolve_ty(p.ty.as_ref().unwrap())?),
             None => None,
         };
         Ok((name, first_param_ty))
@@ -126,8 +123,8 @@ impl Sema {
         let id = self.sym_table.lookup_func(name, first_param_ty);
 
         let params = Vec::new();
-        for params in func.params {
-            
+        for param in func.params {
+            self.resolve_ty(&param.ty.unwrap());
         }
 
         let body = tast::Block {
