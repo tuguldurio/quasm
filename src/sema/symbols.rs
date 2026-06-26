@@ -56,10 +56,10 @@ impl SymbolTable {
         self.next_var_id = 0;
     }
 
-    pub fn define_var(&mut self, name: String, ty: Ty) -> u64 {
+    pub fn define_var(&mut self, name: &str, ty: Ty) -> u64 {
         let id = self.next_var_id;
         self.next_var_id += 1;
-        self.vars.insert(name, VarSymbol { id, ty });
+        self.vars.insert(name.to_string(), VarSymbol { id, ty });
         id
     }
 
