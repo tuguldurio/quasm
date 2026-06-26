@@ -60,25 +60,24 @@ impl Sema {
         }
     }
 
-    fn check_program(&mut self, ast: ast::Program) -> Result<tast::Program, SemaError> {
-        let _ = ast;
+    fn func_key(&self, func: &ast::FuncStmt) -> Result<(String, Option<Ty>), SemaError> {
+        let name = func.name.value.clone();
+        let first_param_ty = match func.params.first() {
+            Some(p) => Some(self.resolve_ty(
+                p.ty.as_ref()
+                    .expect("encountered None from func decl param type during sema"),
+            )?),
+            None => None,
+        };
+        Ok((name, first_param_ty))
+    }
 
+    fn check_program(&mut self, ast: ast::Program) -> Result<tast::Program, SemaError> {
         // initial pass to register functions
         for stmt in &ast.stmts {
             match stmt {
                 ast::Stmt::Func(func) => {
-                    let name = func.name.value.clone();
-                    let first_param_ty = match func.params.first() {
-                        Some(p) => {
-                            Some(
-                                self.resolve_ty(
-                                    &p.ty.as_ref()
-                                    .expect("encountered None from func decl param type during sema")
-                                )?
-                            )
-                        }
-                        None => None
-                    };
+                    let (name, first_param_ty) = self.func_key(func)?;
                     self.sym_table.define_func(name, first_param_ty);
                 }
                 ast::Stmt::Let(s) => {
@@ -123,22 +122,21 @@ impl Sema {
     }
 
     fn check_func(&mut self, func: ast::FuncStmt) -> Result<tast::Stmt, SemaError> {
-        let name = func.name.value.clone();
-        let first_param_ty = match func.params.first() {
-            Some(p) => {
-                Some(
-                    self.resolve_ty(
-                        &p.ty.as_ref()
-                        .expect("encountered None from func decl param type during sema")
-                    )?
-                )
-            }
-            None => None
-        };
-        
+        let (name, first_param_ty) = self.func_key(&func)?;
         let id = self.sym_table.lookup_func(name, first_param_ty);
-        println!("FOUND EM {id}");
-        Err(self.err("func not implemented yet", func.name.span))
+
+        let params = Vec::new();
+        for params in func.params {
+            
+        }
+
+        let body = tast::Block {
+            stmts: Vec::new(),
+            ty: Ty::Unit,
+            span: func.body.span
+        };
+
+        Ok(tast::Stmt::Func(tast::FuncStmt { id, name: func.name, params, body }))
     }
 
     fn check_let(&mut self, let_stmt: ast::LetStmt) -> Result<tast::Stmt, SemaError> {
