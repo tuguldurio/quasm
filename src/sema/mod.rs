@@ -122,9 +122,10 @@ impl Sema {
         let (name, first_param_ty) = self.func_key(&func)?;
         let id = self.sym_table.lookup_func(name, first_param_ty);
 
-        let params = Vec::new();
+        let mut params = Vec::new();
         for param in func.params {
-            self.resolve_ty(&param.ty.unwrap());
+            let ty = self.resolve_ty(&param.ty.unwrap())?;
+            params.push(tast::Param { name: param.name, id: params.len() as u64, ty });
         }
 
         let body = tast::Block {
