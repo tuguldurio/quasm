@@ -4,6 +4,7 @@ pub mod symbols;
 
 use ty::Ty;
 use crate::parser::ast;
+use crate::common::ast::Literal;
 use crate::common::span::Span;
 use symbols::SymbolTable;
 
@@ -112,9 +113,7 @@ impl Sema {
             ast::Stmt::Struct(struct_stmt) => {
                 Err(self.err("struct statement not implemented yet", struct_stmt.name.span))
             }
-            ast::Stmt::Expr(expr) => {
-                Err(self.err("expression statement not implemented yet", expr.span))
-            }
+            ast::Stmt::Expr(expr) => Ok(tast::Stmt::Expr(self.check_expr(expr)?)),
         }
     }
 
