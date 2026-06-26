@@ -140,10 +140,12 @@ impl Sema {
         let params_ty = func_symbol.params_ty.clone();
         let ret_ty = func_symbol.ret_ty.clone();
 
-        // build params
+        // enter func and build params
+        self.sym_table.enter_func();
         let mut params = Vec::new();
-        for ty in params_ty {
-            params.push(tast::Param { id: params.len() as u64, ty });
+        for (param, ty) in func.params.iter().zip(params_ty) {
+            let id = self.sym_table.define_var(&param.name.value, ty.clone());
+            params.push(tast::Param { id, ty });
         }
 
         // build body
@@ -199,10 +201,13 @@ impl Sema {
                 Ok(tast::Expr { kind: tast::ExprKind::Block(block), ty })
             }
             ast::ExprKind::Identifier(identifier) => {
-                //TODO
-                // identifier.
-                // Ok(())
-                Ok(tast::Expr { kind: tast::ExprKind::Error, ty: Ty::Unit })
+                let Some((id, ty)) = self.sym_table.lookup_var(&identifier.value) else {
+                    return Err(self.err(
+                        format!("cannot find `{}` in this scope", identifier.value),
+                        identifier.span
+                    ));
+                };
+                Ok(tast::Expr { kind: tast::ExprKind::Var { id }, ty })
             }
             // other expression kinds aren't checked yet
             _ => Ok(tast::Expr { kind: tast::ExprKind::Error, ty: Ty::Unit })

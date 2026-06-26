@@ -51,6 +51,7 @@ pub struct Expr {
 #[derive(Debug)]
 pub enum ExprKind {
     Literal(Literal),
+    Var { id: u64 },
     Block(Block),
     BinaryOp {
         op: BinOpKind,
