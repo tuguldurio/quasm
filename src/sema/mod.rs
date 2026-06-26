@@ -113,7 +113,7 @@ impl Sema {
             ast::Stmt::Struct(struct_stmt) => {
                 Err(self.err("struct statement not implemented yet", struct_stmt.name.span))
             }
-            ast::Stmt::Expr(expr) => Ok(tast::Stmt::Expr(self.check_expr(expr)?)),
+            ast::Stmt::Expr(expr) => Ok(tast::Stmt::Expr(self.check_expr(expr)?))
         }
     }
 
@@ -129,7 +129,7 @@ impl Sema {
 
         let ret_ty = match &func.ret {
             Some(r) => self.resolve_ty(r)?,
-            None => Ty::Unit,
+            None => Ty::Unit
         };
 
         let body = self.check_block(func.body)?;
@@ -140,7 +140,7 @@ impl Sema {
                     "function `{}` returns `{:?}` but its body has type `{:?}`",
                     func.name.value, ret_ty, body.ty
                 ),
-                body.span,
+                body.span
             ));
         }
 
@@ -162,7 +162,7 @@ impl Sema {
         // a block evaluates to its trailing expression, otherwise to unit
         let ty = match stmts.last() {
             Some(tast::Stmt::Expr(expr)) => expr.ty.clone(),
-            _ => Ty::Unit,
+            _ => Ty::Unit
         };
 
         Ok(tast::Block { stmts, ty, span })
@@ -174,7 +174,7 @@ impl Sema {
                 let ty = match lit {
                     Literal::Int(_) => Ty::Int,
                     Literal::Float(_) => Ty::Float,
-                    Literal::Bool(_) => Ty::Bool,
+                    Literal::Bool(_) => Ty::Bool
                 };
                 Ok(tast::Expr { kind: tast::ExprKind::Literal(lit), ty })
             }
@@ -184,7 +184,7 @@ impl Sema {
                 Ok(tast::Expr { kind: tast::ExprKind::Block(block), ty })
             }
             // other expression kinds aren't checked yet
-            _ => Ok(tast::Expr { kind: tast::ExprKind::Error, ty: Ty::Unit }),
+            _ => Ok(tast::Expr { kind: tast::ExprKind::Error, ty: Ty::Unit })
         }
     }
 }
