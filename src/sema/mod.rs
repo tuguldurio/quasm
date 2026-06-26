@@ -216,7 +216,7 @@ impl Sema {
 
                 let Some(ty) = ty::bin_op_ty(op, &left.ty, &right.ty) else {
                     return Err(self.err(
-                        format!("Invalid binary operation: `{:?}` {:?} `{:?}`", left.ty, op, right.ty),
+                        format!("Invalid binary operation: `{:?}` {} `{:?}`", left.ty, op, right.ty),
                         span
                     ));
                 };
