@@ -209,6 +209,23 @@ impl Sema {
                 };
                 Ok(tast::Expr { kind: tast::ExprKind::Var { id }, ty })
             }
+            ast::ExprKind::BinaryOp { op, left, right } => {
+                let span = expr.span;
+                let left = self.check_expr(*left)?;
+                let right = self.check_expr(*right)?;
+
+                let Some(ty) = ty::bin_op_ty(op, &left.ty, &right.ty) else {
+                    return Err(self.err(
+                        format!("Invalid binary operation: `{:?}` {:?} `{:?}`", left.ty, op, right.ty),
+                        span
+                    ));
+                };
+
+                Ok(tast::Expr {
+                    kind: tast::ExprKind::BinaryOp { op, left: Box::new(left), right: Box::new(right) },
+                    ty
+                })
+            }
             // other expression kinds aren't checked yet
             _ => Ok(tast::Expr { kind: tast::ExprKind::Error, ty: Ty::Unit })
         }
