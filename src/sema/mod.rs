@@ -87,16 +87,16 @@ impl Sema {
                     self.sym_table.define_func(&name, params_ty, ret);
                 }
                 ast::Stmt::Let(s) => {
-                    return Err(self.err("Not implemented yet", s.name.span));
+                    return Err(self.err("not implemented yet", s.name.span));
                 }
                 ast::Stmt::Type(s) => {
-                    return Err(self.err("Not implemented yet", s.name.span));
+                    return Err(self.err("not implemented yet", s.name.span));
                 }
                 ast::Stmt::Struct(s) => {
-                    return Err(self.err("Not implemented yet", s.name.span));
+                    return Err(self.err("not implemented yet", s.name.span));
                 }
                 ast::Stmt::Expr(e) => {
-                    return Err(self.err("Top level should not contain expression", e.span));
+                    return Err(self.err("top level should not contain expression", e.span));
                 }
             }
         }
@@ -154,7 +154,7 @@ impl Sema {
         if body.ty != ret_ty {
             return Err(self.err(
                 format!(
-                    "function `{}` returns `{:?}` but its body has type `{:?}`",
+                    "type mismatch for function `{}` return type: expected `{:?}`, got `{:?}`",
                     name, ret_ty, body.ty
                 ),
                 body.span
@@ -173,7 +173,7 @@ impl Sema {
                 if annotation_ty != value.ty {
                     return Err(self.err(
                         format!(
-                            "Type mismatch for {}: expected `{:?}`, got `{:?}`",
+                            "type mismatch for {}: expected `{:?}`, got `{:?}`",
                             let_stmt.name.value, annotation_ty, value.ty
                         ),
                         let_stmt.name.span
@@ -237,7 +237,7 @@ impl Sema {
 
                 let Some(ty) = ty::bin_op_ty(op, &left.ty, &right.ty) else {
                     return Err(self.err(
-                        format!("Invalid binary operation: `{:?}` {} `{:?}`", left.ty, op, right.ty),
+                        format!("invalid binary operation: `{:?}` {} `{:?}`", left.ty, op, right.ty),
                         span
                     ));
                 };
