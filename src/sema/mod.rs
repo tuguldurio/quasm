@@ -96,7 +96,8 @@ impl Sema {
                         Some(ret) => self.resolve_ty(ret)?,
                         None => Ty::Unit
                     };
-                    self.sym_table.define_func(&name, params_ty, ret);
+                    self.sym_table.define_func(&name, params_ty, ret)
+                        .map_err(|msg| self.err(msg, func.name.span))?;
                 }
                 ast::Stmt::Let(s) => {
                     return Err(self.err("not implemented yet", s.name.span));

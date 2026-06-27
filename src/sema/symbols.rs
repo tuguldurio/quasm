@@ -34,17 +34,24 @@ impl SymbolTable {
         }
     }
 
-    pub fn define_func(&mut self, name: &str, params_ty: Vec<Ty>, ret_ty: Ty) {
+    pub fn define_func(&mut self, name: &str, params_ty: Vec<Ty>, ret_ty: Ty) -> Result<(), String> {
         let key = FuncKey {
             name: name.to_string(),
             first_param_ty: params_ty.first().cloned()
         };
+
+        if self.funcs.contains_key(&key) {
+            let signature = match &key.first_param_ty {
+                Some(ty) => format!("`{name}({ty:?}...)`"),
+                None => format!("`{name}`"),
+            };
+            return Err(format!("function {signature} is already defined"));
+        }
+
         let id = self.funcs.len() as u64;
 
-        self.funcs.insert(
-            key,
-            FuncSymbol { id, params_ty, ret_ty }
-        );
+        self.funcs.insert(key, FuncSymbol { id, params_ty, ret_ty });
+        Ok(())
     }
 
     pub fn lookup_func(&self, name: &str, first_param_ty: Option<Ty>) -> Option<&FuncSymbol> {
