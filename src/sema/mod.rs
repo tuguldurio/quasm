@@ -165,6 +165,13 @@ impl Sema {
     }
 
     fn check_let(&mut self, let_stmt: ast::LetStmt) -> Result<tast::Stmt, SemaError> {
+        if self.sym_table.lookup_var(&let_stmt.name.value).is_some() {
+            return Err(self.err(
+                format!("variable `{}` is already defined", let_stmt.name.value),
+                let_stmt.name.span
+            ));
+        }
+
         let value = self.check_expr(let_stmt.value)?;
 
         let annot_ty = match &let_stmt.annot_ty {
@@ -223,13 +230,13 @@ impl Sema {
                 Ok(tast::Expr { kind: tast::ExprKind::Block(block), ty })
             }
             ast::ExprKind::Identifier(identifier) => {
-                let Some((id, ty)) = self.sym_table.lookup_var(&identifier.value) else {
+                let Some(var_symbol) = self.sym_table.lookup_var(&identifier.value) else {
                     return Err(self.err(
                         format!("cannot find `{}` in this scope", identifier.value),
                         identifier.span
                     ));
                 };
-                Ok(tast::Expr { kind: tast::ExprKind::Var { id }, ty })
+                Ok(tast::Expr { kind: tast::ExprKind::Var { id: var_symbol.id }, ty: var_symbol.ty.clone() })
             }
             ast::ExprKind::BinaryOp { op, left, right } => {
                 let span = expr.span;

@@ -63,7 +63,7 @@ impl SymbolTable {
         id
     }
 
-    pub fn lookup_var(&self, name: &str) -> Option<(u64, Ty)> {
-        self.vars.get(name).map(|v| (v.id, v.ty.clone()))
+    pub fn lookup_var(&self, name: &str) -> Option<&VarSymbol> {
+        self.vars.get(name)
     }
 }
