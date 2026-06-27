@@ -156,8 +156,7 @@ impl Sema {
         self.sym_table.enter_func();
         let mut params = Vec::new();
         for (param, ty) in func.params.iter().zip(params_ty) {
-            let id = self.sym_table
-                .define_var(&param.name.value, ty.clone())
+            let id = self.sym_table.define_var(&param.name.value, ty.clone())
                 .expect("bug: weird! are we increasing the id of the params?");
             params.push(tast::Param { id, ty });
         }
