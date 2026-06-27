@@ -21,16 +21,16 @@ pub struct VarSymbol {
 pub struct SymbolTable {
     // symbols: HashMap<>
     funcs: HashMap<FuncKey, FuncSymbol>,
-    vars: HashMap<String, VarSymbol>,
-    next_var_id: u64
+    scopes: Vec<HashMap<String, VarSymbol>>,
+    next_local_id: u64
 }
 
 impl SymbolTable {
     pub fn new() -> Self {
         Self {
             funcs: HashMap::new(),
-            vars: HashMap::new(),
-            next_var_id: 0
+            scopes: Vec::new(),
+            next_local_id: 0
         }
     }
 
@@ -51,19 +51,39 @@ impl SymbolTable {
         self.funcs.get(&FuncKey { name: name.to_string(), first_param_ty })
     }
 
-    pub fn enter_func(&mut self) {
-        self.vars.clear();
-        self.next_var_id = 0;
+    pub fn enter_scope(&mut self) {
+        self.scopes.push(HashMap::new())
+    }
+    
+    pub fn exit_scope(&mut self) {
+        self.scopes.pop();
     }
 
-    pub fn define_var(&mut self, name: &str, ty: Ty) -> u64 {
-        let id = self.next_var_id;
-        self.next_var_id += 1;
-        self.vars.insert(name.to_string(), VarSymbol { id, ty });
-        id
+    pub fn enter_func(&mut self) {
+        self.enter_scope();
+        self.next_local_id = 0;
+    }
+
+    pub fn exit_func(&mut self) {
+        self.exit_scope();
+    }
+
+    pub fn define_var(&mut self, name: &str, ty: Ty) -> Result<u64, String> {
+        let scope = self.scopes.last_mut()
+            .expect("bug: idk why but for some reason define_var is called without any scope");
+
+        if scope.contains_key(name) {
+            return Err(format!("variable `{name}` is alredy defined"))
+        }
+
+        let id = self.next_local_id;
+        self.next_local_id += 1;
+
+        scope.insert(name.to_string(), VarSymbol {id, ty});
+        Ok(id)
     }
 
     pub fn lookup_var(&self, name: &str) -> Option<&VarSymbol> {
-        self.vars.get(name)
+        self.scopes.iter().rev().find_map(|scope| scope.get(name))
     }
 }

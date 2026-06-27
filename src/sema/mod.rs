@@ -143,12 +143,15 @@ impl Sema {
         self.sym_table.enter_func();
         let mut params = Vec::new();
         for (param, ty) in func.params.iter().zip(params_ty) {
-            let id = self.sym_table.define_var(&param.name.value, ty.clone());
+            let id = self.sym_table
+                .define_var(&param.name.value, ty.clone())
+                .expect("bug: weird! are we increasing the id of the params?");
             params.push(tast::Param { id, ty });
         }
 
         // build body
         let body = self.check_block(func.body)?;
+        self.sym_table.exit_func();
 
         if body.ty != ret_ty {
             return Err(self.err(
@@ -164,13 +167,6 @@ impl Sema {
     }
 
     fn check_let(&mut self, let_stmt: ast::LetStmt) -> Result<tast::Stmt, SemaError> {
-        if self.sym_table.lookup_var(&let_stmt.name.value).is_some() {
-            return Err(self.err(
-                format!("variable `{}` is already defined", let_stmt.name.value),
-                let_stmt.name.span
-            ));
-        }
-
         let value = self.check_expr(let_stmt.value)?;
 
         let annot_ty = match &let_stmt.annot_ty {
@@ -190,7 +186,8 @@ impl Sema {
             None => value.ty.clone()
         };
 
-        let id = self.sym_table.define_var(&let_stmt.name.value, annot_ty.clone());
+        let id = self.sym_table.define_var(&let_stmt.name.value, annot_ty.clone())
+            .map_err(|msg| self.err(msg, let_stmt.name.span))?;
 
         // a let statement itself evaluates to unit
         Ok(tast::Stmt::Let(tast::LetStmt { id, value, annot_ty, ty: Ty::Unit }))
@@ -199,10 +196,12 @@ impl Sema {
     fn check_block(&mut self, block: ast::Block) -> Result<tast::Block, SemaError> {
         let span = block.span;
 
+        self.sym_table.enter_scope();
         let mut stmts = Vec::new();
         for stmt in block.stmts {
             stmts.push(self.check_statement(stmt)?);
         }
+        self.sym_table.exit_scope();
 
         // a block evaluates to its trailing expression, otherwise to unit
         let ty = match stmts.last() {
