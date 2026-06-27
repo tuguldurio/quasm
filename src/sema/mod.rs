@@ -255,6 +255,64 @@ impl Sema {
                     ty
                 })
             }
+            ast::ExprKind::Call { callee, args: _args } => {
+                let mut args = Vec::new();
+                for arg in _args {
+                    args.push(self.check_expr(arg)?);
+                }
+
+                match callee.kind {
+                    ast::ExprKind::Identifier(identifier) => {
+                        let name = identifier.value;
+                        let first_param_ty = args.first().map(|arg| arg.ty.clone());
+
+                        let Some(func_symbol) = self.sym_table.lookup_func(&name, first_param_ty) else {
+                            return Err(self.err(
+                                format!("cannot find function `{}`", name),
+                                identifier.span
+                            ));
+                        };
+                        let id = func_symbol.id;
+                        let params_ty = func_symbol.params_ty.clone();
+                        let ret_ty = func_symbol.ret_ty.clone();
+
+                        if args.len() != params_ty.len() {
+                            return Err(self.err(
+                                format!(
+                                    "function `{}` expects {} argument(s), got {}",
+                                    name, params_ty.len(), args.len()
+                                ),
+                                callee.span
+                            ));
+                        }
+
+                        for (arg, param_ty) in args.iter().zip(&params_ty) {
+                            if arg.ty != *param_ty {
+                                return Err(self.err(
+                                    format!(
+                                        "type mismatch in call to `{}`: expected `{:?}`, got `{:?}`",
+                                        name, param_ty, arg.ty
+                                    ),
+                                    callee.span
+                                ));
+                            }
+                        }
+
+                        let callee = tast::Expr {
+                            kind: tast::ExprKind::Func { id },
+                            ty: Ty::Func { params: params_ty, ret: Box::new(ret_ty.clone()) }
+                        };
+
+                        Ok(tast::Expr {
+                            kind: tast::ExprKind::Call { callee: Box::new(callee), args },
+                            ty: ret_ty
+                        })
+                    },
+                    _ => {
+                        Err(self.err("only call on identifier is supported", callee.span))
+                    }
+                }
+            }
             // other expression kinds aren't checked yet
             _ => Ok(tast::Expr { kind: tast::ExprKind::Error, ty: Ty::Unit })
         }
