@@ -24,7 +24,17 @@ fn main() {
     });
 
     let tokens = match lexer::lex(&src) {
-        Ok(tokens) => tokens,
+        Ok(tokens) => {
+            if args.debug {
+                let tokens_out: String = tokens
+                    .iter()
+                    .map(|t| format!("{:?} {}", t.kind, t.span))
+                    .collect::<Vec<_>>()
+                    .join("\n");
+                write_debug("tokens.txt", &tokens_out);
+            }
+            tokens
+        },
         Err(lexer_errors) => {
             for error in &lexer_errors {
                 eprintln!("lex error: {} at {}", error.message, error.span);
@@ -33,36 +43,31 @@ fn main() {
         }
     };
 
-    if args.debug {
-        let tokens_out: String = tokens
-            .iter()
-            .map(|t| format!("{:?} {}", t.kind, t.span))
-            .collect::<Vec<_>>()
-            .join("\n");
-        write_debug("tokens.txt", &tokens_out);
-    }
-
     let ast = match parser::parse(tokens) {
-        Ok(program) => program,
+        Ok(ast) => {
+            if args.debug {
+                write_debug("ast.txt", &format!("{:#?}", ast));
+            }
+            ast
+        },
         Err(e) => {
             eprintln!("parse error: {} at {}", e.message, e.span);
             std::process::exit(1);
         }
     };
 
-    if args.debug {
-        write_debug("ast.txt", &format!("{:#?}", ast));
-    }
-
-    let tast = match sema::check(ast) {
-        Ok(tast) => tast,
+    match sema::check(ast) {
+        Ok(tast) => {
+            if args.debug {
+                write_debug("tast.txt", &format!("{:#?}", tast));
+            }
+            tast
+        },
         Err(e) => {
             eprintln!("sema error: {} at {}", e.message, e.span);
             std::process::exit(1);
         }
     };
 
-    if args.debug {
-        write_debug("tast.txt", &format!("{:#?}", tast));
-    }
+    
 }
