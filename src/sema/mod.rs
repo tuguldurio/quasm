@@ -139,7 +139,7 @@ impl Sema {
     }
 
     fn check_func(&mut self, func: ast::FuncStmt) -> Result<tast::FuncStmt, SemaError> {
-        // lookup symtable
+        // lookup symbol table
         let name = func.name.value;
         let first_param_ty = func.params.first()
             .map(|param| self.resolve_ty(param.ty.as_ref()
@@ -190,27 +190,7 @@ impl Sema {
         let id = self.sym_table.define_var(&let_stmt.name.value, annot_ty.clone())
             .map_err(|msg| self.err(msg, let_stmt.name.span))?;
 
-        // a let statement itself evaluates to unit
         Ok(tast::Stmt::Let(tast::LetStmt { id, value, annot_ty, ty: Ty::Unit }))
-    }
-
-    fn check_block(&mut self, block: ast::Block) -> Result<tast::Block, SemaError> {
-        let span = block.span;
-
-        self.sym_table.enter_scope();
-        let mut stmts = Vec::new();
-        for stmt in block.stmts {
-            stmts.push(self.check_statement(stmt)?);
-        }
-        self.sym_table.exit_scope();
-
-        // a block evaluates to its trailing expression, otherwise to unit
-        let ty = match stmts.last() {
-            Some(tast::Stmt::Expr(expr)) => expr.ty.clone(),
-            _ => Ty::Unit
-        };
-
-        Ok(tast::Block { stmts, ty, span })
     }
 
     fn check_expr(&mut self, expr: ast::Expr) -> Result<tast::Expr, SemaError> {
@@ -237,77 +217,104 @@ impl Sema {
                 };
                 Ok(tast::Expr { kind: tast::ExprKind::Var { id: var_symbol.id }, ty: var_symbol.ty.clone() })
             }
-            ast::ExprKind::BinaryOp { op, left, right } => {
-                let span = expr.span;
-                let left = self.check_expr(*left)?;
-                let right = self.check_expr(*right)?;
+            ast::ExprKind::BinaryOp(binaryop) => {
+                let binaryop = self.check_binaryop(binaryop)?;
+                let ty = binaryop.ty.clone();
+                Ok(tast::Expr { kind: tast::ExprKind::BinaryOp(binaryop), ty })
+            }
+            ast::ExprKind::Call(call) => {
+                let call = self.check_call(call)?;
+                let ty = call.ty.clone();
+                Ok(tast::Expr { kind: tast::ExprKind::Call(call), ty })
+            }
+            _ => Ok(tast::Expr { kind: tast::ExprKind::Error, ty: Ty::Unit })
+        }
+    }
 
-                let Some(ty) = ty::bin_op_ty(op, &left.ty, &right.ty) else {
+    fn check_block(&mut self, block: ast::Block) -> Result<tast::Block, SemaError> {
+        let span = block.span;
+
+        self.sym_table.enter_scope();
+        let mut stmts = Vec::new();
+        for stmt in block.stmts {
+            stmts.push(self.check_statement(stmt)?);
+        }
+        self.sym_table.exit_scope();
+
+        // a block evaluates to its trailing expression, otherwise to unit
+        let ty = match stmts.last() {
+            Some(tast::Stmt::Expr(expr)) => expr.ty.clone(),
+            _ => Ty::Unit
+        };
+
+        Ok(tast::Block { stmts, ty, span })
+    }
+
+    fn check_binaryop(&mut self, binaryop: ast::BinaryOp) -> Result<tast::BinaryOp, SemaError> {
+        let span = binaryop.left.span;
+        let left = self.check_expr(*binaryop.left)?;
+        let right = self.check_expr(*binaryop.right)?;
+
+        let Some(ty) = ty::bin_op_ty(binaryop.op, &left.ty, &right.ty) else {
+            return Err(self.err(
+                format!("invalid binary operation: `{:?}` {} `{:?}`", left.ty, binaryop.op, right.ty),
+                span
+            ));
+        };
+
+        Ok(tast::BinaryOp { op: binaryop.op, left: Box::new(left), right: Box::new(right), ty })
+    }
+
+    fn check_call(&mut self, call: ast::Call) -> Result<tast::Call, SemaError> {
+        let mut args = Vec::new();
+        for arg in call.args {
+            args.push(self.check_expr(arg)?);
+        }
+
+        match call.callee.kind {
+            ast::ExprKind::Identifier(identifier) => {
+                // lookup symbol table
+                let name = identifier.value;
+                let first_param_ty = args.first().map(|arg| arg.ty.clone());
+
+                let Some(func_symbol) = self.sym_table.lookup_func(&name, first_param_ty) else {
                     return Err(self.err(
-                        format!("invalid binary operation: `{:?}` {} `{:?}`", left.ty, op, right.ty),
-                        span
+                        format!("cannot find function `{}`", name),
+                        identifier.span
                     ));
                 };
+                let id = func_symbol.id;
+                let params_ty = func_symbol.params_ty.clone();
+                let ret_ty = func_symbol.ret_ty.clone();
 
-                Ok(tast::Expr {
-                    kind: tast::ExprKind::BinaryOp { op, left: Box::new(left), right: Box::new(right) },
-                    ty
-                })
-            }
-            ast::ExprKind::Call { callee, args: _args } => {
-                let mut args = Vec::new();
-                for arg in _args {
-                    args.push(self.check_expr(arg)?);
+                // validate params 
+                if args.len() != params_ty.len() {
+                    return Err(self.err(
+                        format!(
+                            "function `{}` expects {} argument(s), got {}",
+                            name, params_ty.len(), args.len()
+                        ),
+                        call.callee.span
+                    ));
                 }
 
-                match callee.kind {
-                    ast::ExprKind::Identifier(identifier) => {
-                        let name = identifier.value;
-                        let first_param_ty = args.first().map(|arg| arg.ty.clone());
-
-                        let Some(func_symbol) = self.sym_table.lookup_func(&name, first_param_ty) else {
-                            return Err(self.err(
-                                format!("cannot find function `{}`", name),
-                                identifier.span
-                            ));
-                        };
-                        let id = func_symbol.id;
-                        let params_ty = func_symbol.params_ty.clone();
-                        let ret_ty = func_symbol.ret_ty.clone();
-
-                        if args.len() != params_ty.len() {
-                            return Err(self.err(
-                                format!(
-                                    "function `{}` expects {} argument(s), got {}",
-                                    name, params_ty.len(), args.len()
-                                ),
-                                callee.span
-                            ));
-                        }
-
-                        for (arg, param_ty) in args.iter().zip(&params_ty) {
-                            self.expect_eq(param_ty, &arg.ty, callee.span, || {
-                                format!("type mismatch in call to `{}`", name)
-                            })?;
-                        }
-
-                        let callee = tast::Expr {
-                            kind: tast::ExprKind::Func { id },
-                            ty: Ty::Func { params: params_ty, ret: Box::new(ret_ty.clone()) }
-                        };
-
-                        Ok(tast::Expr {
-                            kind: tast::ExprKind::Call { callee: Box::new(callee), args },
-                            ty: ret_ty
-                        })
-                    },
-                    _ => {
-                        Err(self.err("only call on identifier is supported", callee.span))
-                    }
+                for (arg, param_ty) in args.iter().zip(&params_ty) {
+                    self.expect_eq(param_ty, &arg.ty, call.callee.span, || {
+                        format!("type mismatch in call to `{}`", name)
+                    })?;
                 }
+
+                // build tast
+                let callee = tast::Expr {
+                    kind: tast::ExprKind::Func { id },
+                    ty: Ty::Func { params: params_ty, ret: Box::new(ret_ty.clone()) }
+                };
+
+                Ok(tast::Call { callee: Box::new(callee), args, ty: ret_ty })
+            },
+            _ => {
+                Err(self.err("only call on identifier is supported", call.callee.span))
             }
-            // other expression kinds aren't checked yet
-            _ => Ok(tast::Expr { kind: tast::ExprKind::Error, ty: Ty::Unit })
         }
     }
 }

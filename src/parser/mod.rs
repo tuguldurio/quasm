@@ -152,22 +152,3 @@ impl Parser {
         Ok(items)
     }
 }
-
-impl Parser {
-    fn parse_identifier(&mut self) -> Result<Identifier, ParseError> {
-        match self.peek() {
-            TokenKind::Identifier(value) => {
-                let span = self.cur_span();
-                self.advance();
-                Ok(Identifier { value, span })
-            }
-            other => Err(self.err(format!("expected identifier, got {:?}", other)))
-        }
-    }
-
-    fn parse_param(&mut self) -> Result<Param, ParseError> {
-        let name = self.parse_identifier()?;
-        let ty = self.parse_type_annotation()?;
-        Ok(Param { name, ty })
-    }
-}

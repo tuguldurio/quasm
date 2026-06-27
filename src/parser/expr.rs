@@ -5,12 +5,12 @@ use super::ast::*;
 use super::Parser;
 use super::ParseError;
 
-impl Parser {
-    fn binary(op: BinOpKind, left: Expr, right: Expr) -> Expr {
-        let span = left.span.to(right.span);
-        Expr { kind: ExprKind::BinaryOp { op, left: Box::new(left), right: Box::new(right) }, span }
-    }
+fn new_binary(op: BinOpKind, left: Expr, right: Expr) -> Expr {
+    let span = left.span.to(right.span);
+    Expr { kind: ExprKind::BinaryOp(BinaryOp {op, left: Box::new(left), right: Box::new(right)}), span }
+}
 
+impl Parser {
     fn literal_expr(&mut self, literal: Literal) -> Expr {
         let span = self.cur_span();
         self.advance();
@@ -23,6 +23,29 @@ impl Parser {
         Pattern { kind: PatternKind::Literal(literal), span }
     }
 
+    pub(super) fn parse_block(&mut self) -> Result<Block, ParseError> {
+        let start = self.cur_span().start;
+        let stmts = self.parse_braced_list("statement", |p| p.parse_statement())?;
+        Ok(Block { stmts, span: self.span_from(start) })
+    }
+
+    pub(super) fn parse_identifier(&mut self) -> Result<Identifier, ParseError> {
+        match self.peek() {
+            TokenKind::Identifier(value) => {
+                let span = self.cur_span();
+                self.advance();
+                Ok(Identifier { value, span })
+            }
+            other => Err(self.err(format!("expected identifier, got {:?}", other)))
+        }
+    }
+
+    pub(super) fn parse_param(&mut self) -> Result<Param, ParseError> {
+        let name = self.parse_identifier()?;
+        let ty = self.parse_type_annotation()?;
+        Ok(Param { name, ty })
+    }
+
     pub(super) fn parse_expr(&mut self) -> Result<Expr, ParseError> {
         self.parse_or()
     }
@@ -33,7 +56,7 @@ impl Parser {
         while self.peek_is(TokenKind::Or) {
             self.advance();
             let right = self.parse_and()?;
-            left = Self::binary(BinOpKind::Or, left, right);
+            left = new_binary(BinOpKind::Or, left, right);
         }
 
         Ok(left)
@@ -45,7 +68,7 @@ impl Parser {
         while self.peek_is(TokenKind::And) {
             self.advance();
             let right = self.parse_equality()?;
-            left = Self::binary(BinOpKind::And, left, right);
+            left = new_binary(BinOpKind::And, left, right);
         }
 
         Ok(left)
@@ -61,7 +84,7 @@ impl Parser {
             };
             self.advance();
             let right = self.parse_comparison()?;
-            left = Self::binary(op, left, right);
+            left = new_binary(op, left, right);
         }
         Ok(left)
     }
@@ -78,7 +101,7 @@ impl Parser {
             };
             self.advance();
             let right = self.parse_additive()?;
-            left = Self::binary(op, left, right);
+            left = new_binary(op, left, right);
         }
         Ok(left)
     }
@@ -94,7 +117,7 @@ impl Parser {
             };
             self.advance();
             let right = self.parse_multiplicative()?;
-            left = Self::binary(op, left, right);
+            left = new_binary(op, left, right);
         }
 
         Ok(left)
@@ -111,7 +134,7 @@ impl Parser {
             };
             self.advance();
             let right = self.parse_unary()?;
-            left = Self::binary(op, left, right);
+            left = new_binary(op, left, right);
         }
 
         Ok(left)
@@ -151,7 +174,7 @@ impl Parser {
                 TokenKind::LParen => {
                     let args = self.parse_call_args()?;
                     let span = self.span_from(expr.span.start);
-                    expr = Expr { kind: ExprKind::Call { callee: Box::new(expr), args }, span };
+                    expr = Expr { kind: ExprKind::Call(Call { callee: Box::new(expr), args }), span };
                 }
                 TokenKind::LBracket => {
                     self.advance();

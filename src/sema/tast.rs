@@ -38,13 +38,6 @@ pub struct LetStmt {
 }
 
 #[derive(Debug)]
-pub struct Block {
-    pub stmts: Vec<Stmt>,
-    pub ty: Ty,
-    pub span: Span
-}
-
-#[derive(Debug)]
 pub struct Expr {
     pub kind: ExprKind,
     pub ty: Ty
@@ -56,19 +49,34 @@ pub enum ExprKind {
     Var { id: VarId },
     Func { id: FuncId },
     Block(Block),
-    BinaryOp {
-        op: BinOpKind,
-        left: Box<Expr>,
-        right: Box<Expr>
-    },
+    BinaryOp(BinaryOp),
     UnaryOp {
         op: UnaryOpKind,
         operand: Box<Expr>
     },
-    Call {
-        callee: Box<Expr>,
-        args: Vec<Expr>
-    },
+    Call(Call),
     // stands in for an expression that failed to check or isn't supported yet
     Error
+}
+
+#[derive(Debug)]
+pub struct Block {
+    pub stmts: Vec<Stmt>,
+    pub ty: Ty,
+    pub span: Span
+}
+
+#[derive(Debug)]
+pub struct BinaryOp {
+    pub op: BinOpKind,
+    pub left: Box<Expr>,
+    pub right: Box<Expr>,
+    pub ty: Ty
+}
+
+#[derive(Debug)]
+pub struct Call {
+    pub callee: Box<Expr>,
+    pub args: Vec<Expr>,
+    pub ty: Ty
 }

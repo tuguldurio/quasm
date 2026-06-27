@@ -63,12 +63,6 @@ pub struct StructField {
 }
 
 #[derive(Debug)]
-pub struct Block {
-    pub stmts: Vec<Stmt>,
-    pub span: Span
-}
-
-#[derive(Debug)]
 pub struct Expr {
     pub kind: ExprKind,
     pub span: Span
@@ -80,19 +74,12 @@ pub enum ExprKind {
     Identifier(Identifier),
     Array(Vec<Expr>),
     Block(Block),
-    BinaryOp {
-        op: BinOpKind,
-        left: Box<Expr>,
-        right: Box<Expr>
-    },
+    BinaryOp(BinaryOp),
     UnaryOp {
         op: UnaryOpKind,
         operand: Box<Expr>
     },
-    Call {
-        callee: Box<Expr>,
-        args: Vec<Expr>
-    },
+    Call(Call),
     UfcsCall {
         base: Box<Expr>,
         callee: Identifier,
@@ -120,6 +107,25 @@ pub enum ExprKind {
         ret: Option<Ty>,
         body: Box<Expr>
     }
+}
+
+#[derive(Debug)]
+pub struct Block {
+    pub stmts: Vec<Stmt>,
+    pub span: Span
+}
+
+#[derive(Debug)]
+pub struct BinaryOp {
+    pub op: BinOpKind,
+    pub left: Box<Expr>,
+    pub right: Box<Expr>
+}
+
+#[derive(Debug)]
+pub struct Call {
+    pub callee: Box<Expr>,
+    pub args: Vec<Expr>
 }
 
 #[derive(Debug)]

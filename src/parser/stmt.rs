@@ -81,10 +81,4 @@ impl Parser {
         let ty = self.parse_type()?;
         Ok(StructField { name, ty })
     }
-
-    pub(super) fn parse_block(&mut self) -> Result<Block, ParseError> {
-        let start = self.cur_span().start;
-        let stmts = self.parse_braced_list("statement", |p| p.parse_statement())?;
-        Ok(Block { stmts, span: self.span_from(start) })
-    }
 }
