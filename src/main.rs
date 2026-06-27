@@ -25,14 +25,7 @@ fn main() {
 
     let tokens = match lexer::lex(&src) {
         Ok(tokens) => {
-            if args.debug {
-                let tokens_out: String = tokens
-                    .iter()
-                    .map(|t| format!("{:?} {}", t.kind, t.span))
-                    .collect::<Vec<_>>()
-                    .join("\n");
-                write_debug("tokens.txt", &tokens_out);
-            }
+            if args.debug { write_debug("tokens.txt", &lexer::debug_tokens(&tokens)); }
             tokens
         },
         Err(lexer_errors) => {
@@ -45,9 +38,7 @@ fn main() {
 
     let ast = match parser::parse(tokens) {
         Ok(ast) => {
-            if args.debug {
-                write_debug("ast.txt", &format!("{:#?}", ast));
-            }
+            if args.debug { write_debug("ast.txt", &format!("{:#?}", ast)); }
             ast
         },
         Err(e) => {
@@ -58,9 +49,7 @@ fn main() {
 
     match sema::check(ast) {
         Ok(tast) => {
-            if args.debug {
-                write_debug("tast.txt", &format!("{:#?}", tast));
-            }
+            if args.debug { write_debug("tast.txt", &format!("{:#?}", tast)); }
             tast
         },
         Err(e) => {

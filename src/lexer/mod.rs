@@ -49,3 +49,11 @@ pub fn lex(src: &str) -> Result<Vec<Token>, Vec<LexError>> {
         Err(errors)
     }
 }
+
+pub fn debug_tokens(tokens: &[Token]) -> String {
+    tokens
+        .iter()
+        .map(|t| format!("{:?} {}", t.kind, t.span))
+        .collect::<Vec<_>>()
+        .join("\n")
+}
