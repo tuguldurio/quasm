@@ -129,7 +129,8 @@ impl Sema {
         // lookup symtable
         let name = func.name.value;
         let first_param_ty = func.params.first()
-            .map(|param| self.resolve_ty(param.ty.as_ref().unwrap()))
+            .map(|param| self.resolve_ty(param.ty.as_ref()
+            .expect("bug: func decl param ended up without a type annot. WHAT?")))
             .transpose()?;
 
         let Some(func_symbol) = self.sym_table.lookup_func(&name, first_param_ty) else {
