@@ -128,10 +128,9 @@ impl Sema {
     fn check_func(&mut self, func: ast::FuncStmt) -> Result<tast::FuncStmt, SemaError> {
         // lookup symtable
         let name = func.name.value;
-        let first_param_ty = match func.params.first() {
-            Some(param) => Some(self.resolve_ty(param.ty.as_ref().unwrap())?),
-            None => None
-        };
+        let first_param_ty = func.params.first()
+            .map(|param| self.resolve_ty(param.ty.as_ref().unwrap()))
+            .transpose()?;
 
         let Some(func_symbol) = self.sym_table.lookup_func(&name, first_param_ty) else {
             return Err(self.err(format!("function `{}` is not declared", name), func.name.span));
