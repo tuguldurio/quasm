@@ -179,7 +179,7 @@ impl Sema {
                 if annot_ty != value.ty {
                     return Err(self.err(
                         format!(
-                            "type mismatch for {}: expected `{:?}`, got `{:?}`",
+                            "type mismatch for `{}`: expected `{:?}`, got `{:?}`",
                             let_stmt.name.value, annot_ty, value.ty
                         ),
                         let_stmt.name.span
