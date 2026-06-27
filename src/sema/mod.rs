@@ -53,9 +53,9 @@ impl Sema {
                 }
 
                 match name.value.as_str() {
-                    "Int"   if args.is_empty() => Ok(Ty::Int),
-                    "Float" if args.is_empty() => Ok(Ty::Float),
-                    "Bool"  if args.is_empty() => Ok(Ty::Bool),
+                    "Int" => Ok(Ty::Int),
+                    "Float" => Ok(Ty::Float),
+                    "Bool" => Ok(Ty::Bool),
                     _ => Err(self.err(format!("unknown type `{}`", name.value), name.span))
                 }
             }
@@ -91,7 +91,7 @@ impl Sema {
             match stmt {
                 ast::Stmt::Func(func) => {
                     let name = func.name.value.clone();
-                    let params_ty = self.resolve_params_ty(&func)?;
+                    let params_ty = self.resolve_params_ty(func)?;
                     let ret = match &func.ret {
                         Some(ret) => self.resolve_ty(ret)?,
                         None => Ty::Unit
@@ -129,10 +129,10 @@ impl Sema {
             ast::Stmt::Func(func) => Ok(tast::Stmt::Func(self.check_func(func)?)),
             ast::Stmt::Let(let_stmt) => self.check_let(let_stmt),
             ast::Stmt::Type(type_stmt) => {
-                Err(self.err("type statement not implemented yet", type_stmt.name.span))
+                Err(self.err("not implemented yet", type_stmt.name.span))
             }
             ast::Stmt::Struct(struct_stmt) => {
-                Err(self.err("struct statement not implemented yet", struct_stmt.name.span))
+                Err(self.err("not implemented yet", struct_stmt.name.span))
             }
             ast::Stmt::Expr(expr) => Ok(tast::Stmt::Expr(self.check_expr(expr)?))
         }
