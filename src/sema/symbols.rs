@@ -1,6 +1,12 @@
 use std::collections::HashMap;
 use crate::sema::ty::Ty;
 
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+pub struct VarId(pub u64);
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+pub struct FuncId(pub u64);
+
 #[derive(PartialEq, Eq, Hash)]
 struct FuncKey {
     name: String,
@@ -8,13 +14,13 @@ struct FuncKey {
 }
 
 pub struct FuncSymbol {
-    pub id: u64,
+    pub id: FuncId,
     pub params_ty: Vec<Ty>,
     pub ret_ty: Ty
 }
 
 pub struct VarSymbol {
-    pub id: u64,
+    pub id: VarId,
     pub ty: Ty
 }
 
@@ -48,7 +54,7 @@ impl SymbolTable {
             return Err(format!("function {signature} is already defined"));
         }
 
-        let id = self.funcs.len() as u64;
+        let id = FuncId(self.funcs.len() as u64);
 
         self.funcs.insert(key, FuncSymbol { id, params_ty, ret_ty });
         Ok(())
@@ -75,7 +81,7 @@ impl SymbolTable {
         self.exit_scope();
     }
 
-    pub fn define_var(&mut self, name: &str, ty: Ty) -> Result<u64, String> {
+    pub fn define_var(&mut self, name: &str, ty: Ty) -> Result<VarId, String> {
         let scope = self.scopes.last_mut()
             .expect("bug: idk why but for some reason define_var is called without any scope");
 
@@ -83,7 +89,7 @@ impl SymbolTable {
             return Err(format!("variable `{name}` is already defined"))
         }
 
-        let id = self.next_local_id;
+        let id = VarId(self.next_local_id);
         self.next_local_id += 1;
 
         scope.insert(name.to_string(), VarSymbol {id, ty});

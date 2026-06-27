@@ -1,5 +1,6 @@
 use crate::common::ast::{Literal, BinOpKind, UnaryOpKind};
 use crate::sema::ty::Ty;
+use crate::sema::symbols::{VarId, FuncId};
 use crate::common::span::Span;
 
 #[derive(Debug)]
@@ -16,7 +17,7 @@ pub enum Stmt {
 
 #[derive(Debug)]
 pub struct FuncStmt {
-    pub id: u64,
+    pub id: FuncId,
     pub params: Vec<Param>,
     pub ret_ty: Ty,
     pub body: Block
@@ -24,13 +25,13 @@ pub struct FuncStmt {
 
 #[derive(Debug)]
 pub struct Param {
-    pub id: u64,
+    pub id: VarId,
     pub ty: Ty
 }
 
 #[derive(Debug)]
 pub struct LetStmt {
-    pub id: u64,
+    pub id: VarId,
     pub value: Expr,
     pub annot_ty: Ty,
     pub ty: Ty
@@ -52,8 +53,8 @@ pub struct Expr {
 #[derive(Debug)]
 pub enum ExprKind {
     Literal(Literal),
-    Var { id: u64 },
-    Func { id: u64 },
+    Var { id: VarId },
+    Func { id: FuncId },
     Block(Block),
     BinaryOp {
         op: BinOpKind,
