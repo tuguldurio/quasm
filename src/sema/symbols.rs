@@ -28,7 +28,7 @@ pub struct SymbolTable {
     // symbols: HashMap<>
     funcs: HashMap<FuncKey, FuncSymbol>,
     scopes: Vec<HashMap<String, VarSymbol>>,
-    next_local_id: u64
+    local_id: u64
 }
 
 impl SymbolTable {
@@ -36,7 +36,7 @@ impl SymbolTable {
         Self {
             funcs: HashMap::new(),
             scopes: Vec::new(),
-            next_local_id: 0
+            local_id: 0
         }
     }
 
@@ -74,14 +74,22 @@ impl SymbolTable {
 
     pub fn enter_func(&mut self) {
         self.enter_scope();
-        self.next_local_id = 0;
+        self.local_id = 0;
     }
 
     pub fn exit_func(&mut self) {
         self.exit_scope();
     }
 
+    fn alloc_local_id(&mut self) -> VarId {
+        let id = VarId(self.local_id);
+        self.local_id += 1;
+        id
+    }
+
     pub fn define_var(&mut self, name: &str, ty: Ty) -> Result<VarId, String> {
+        let id = self.alloc_local_id();
+
         let scope = self.scopes.last_mut()
             .expect("bug: idk why but for some reason define_var is called without any scope");
 
@@ -89,10 +97,7 @@ impl SymbolTable {
             return Err(format!("variable `{name}` is already defined"))
         }
 
-        let id = VarId(self.next_local_id);
-        self.next_local_id += 1;
-
-        scope.insert(name.to_string(), VarSymbol {id, ty});
+        scope.insert(name.to_string(), VarSymbol { id, ty });
         Ok(id)
     }
 
