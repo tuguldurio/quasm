@@ -1,7 +1,12 @@
 use crate::common::ast::{Literal, BinOpKind, UnaryOpKind};
 use crate::sema::ty::Ty;
-use crate::sema::symbols::{VarId, FuncId};
 use crate::common::span::Span;
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+pub struct VarId(pub u64);
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+pub struct FuncId(pub u64);
 
 #[derive(Debug)]
 pub struct Program {

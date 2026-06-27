@@ -1,11 +1,6 @@
 use std::collections::HashMap;
-use crate::sema::ty::Ty;
-
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
-pub struct VarId(pub u64);
-
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
-pub struct FuncId(pub u64);
+use crate::sema::{ty::Ty};
+use crate::sema::tast::{FuncId, VarId};
 
 #[derive(PartialEq, Eq, Hash)]
 struct FuncKey {
