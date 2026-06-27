@@ -80,7 +80,7 @@ impl SymbolTable {
             .expect("bug: idk why but for some reason define_var is called without any scope");
 
         if scope.contains_key(name) {
-            return Err(format!("variable `{name}` is alredy defined"))
+            return Err(format!("variable `{name}` is already defined"))
         }
 
         let id = self.next_local_id;
