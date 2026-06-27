@@ -33,6 +33,18 @@ impl Sema {
         SemaError { message: message.into(), span }
     }
 
+    fn expect_eq(&self, expected: &Ty, got: &Ty, span: Span,
+        context: impl FnOnce() -> String,
+    ) -> Result<(), SemaError> {
+        if expected != got {
+            return Err(self.err(
+                format!("{}: expected `{:?}`, got `{:?}`", context(), expected, got),
+                span,
+            ));
+        }
+        Ok(())
+    }
+
     fn resolve_ty(&self, ty: &ast::Ty) -> Result<Ty, SemaError> {
         match ty {
             ast::Ty::Named { name, args } => {
@@ -154,15 +166,9 @@ impl Sema {
         let body = self.check_block(func.body)?;
         self.sym_table.exit_func();
 
-        if body.ty != ret_ty {
-            return Err(self.err(
-                format!(
-                    "type mismatch for function `{}` return type: expected `{:?}`, got `{:?}`",
-                    name, ret_ty, body.ty
-                ),
-                body.span
-            ));
-        }
+        self.expect_eq(&ret_ty, &body.ty, body.span, || {
+            format!("type mismatch for function `{}` return type", name)
+        })?;
 
         Ok(tast::FuncStmt { id, params, ret_ty, body })
     }
@@ -173,15 +179,9 @@ impl Sema {
         let annot_ty = match &let_stmt.annot_ty {
             Some(annot) => {
                 let annot_ty = self.resolve_ty(annot)?;
-                if annot_ty != value.ty {
-                    return Err(self.err(
-                        format!(
-                            "type mismatch for `{}`: expected `{:?}`, got `{:?}`",
-                            let_stmt.name.value, annot_ty, value.ty
-                        ),
-                        let_stmt.name.span
-                    ));
-                }
+                self.expect_eq(&annot_ty, &value.ty, let_stmt.name.span, || {
+                    format!("type mismatch for `{}`", let_stmt.name.value)
+                })?;
                 annot_ty
             }
             None => value.ty.clone()
@@ -286,15 +286,9 @@ impl Sema {
                         }
 
                         for (arg, param_ty) in args.iter().zip(&params_ty) {
-                            if arg.ty != *param_ty {
-                                return Err(self.err(
-                                    format!(
-                                        "type mismatch in call to `{}`: expected `{:?}`, got `{:?}`",
-                                        name, param_ty, arg.ty
-                                    ),
-                                    callee.span
-                                ));
-                            }
+                            self.expect_eq(param_ty, &arg.ty, callee.span, || {
+                                format!("type mismatch in call to `{}`", name)
+                            })?;
                         }
 
                         let callee = tast::Expr {
