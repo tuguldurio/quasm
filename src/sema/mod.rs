@@ -100,7 +100,7 @@ impl Sema {
                         .map_err(|msg| self.err(msg, func.name.span))?;
                 }
                 ast::Stmt::Let(s) => {
-                    return Err(self.err("not implemented yet", s.name.span));
+                    return Err(self.err("top level should not contain let statement", s.name.span));
                 }
                 ast::Stmt::Type(s) => {
                     return Err(self.err("not implemented yet", s.name.span));
