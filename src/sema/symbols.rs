@@ -1,6 +1,6 @@
 use std::collections::HashMap;
 use crate::sema::{ty::Ty};
-use crate::sema::tast::{FuncId, VarId};
+use crate::sema::tast::{FuncId, StructId, VarId};
 
 #[derive(PartialEq, Eq, Hash)]
 struct FuncKey {
@@ -12,6 +12,11 @@ pub struct FuncSymbol {
     pub id: FuncId,
     pub params_ty: Vec<Ty>,
     pub ret_ty: Ty
+}
+
+pub struct StructSymbol {
+    pub id: StructId,
+    fields: Vec<(String, Ty)>
 }
 
 pub struct VarSymbol {

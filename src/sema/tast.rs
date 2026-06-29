@@ -8,6 +8,9 @@ pub struct VarId(pub u64);
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub struct FuncId(pub u64);
 
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+pub struct StructId(pub u64);
+
 #[derive(Debug)]
 pub struct Program {
     pub stmts: Vec<Stmt>

@@ -1,4 +1,5 @@
 use crate::common::ast::BinOpKind;
+use crate::sema::tast::StructId;
 
 #[allow(unused)]
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
@@ -9,6 +10,7 @@ pub enum Ty {
     Unit,
     Array(Box<Ty>),
     Func { params: Vec<Ty>, ret: Box<Ty> },
+    Struct(StructId),
     Infer
     // ...
 }
