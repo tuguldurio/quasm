@@ -44,7 +44,8 @@ pub struct Param {
 #[derive(Debug)]
 pub struct Struct {
     pub id: StructId,
-    pub fields: Vec<StructField>
+    pub fields: Vec<StructField>,
+    pub ty: Ty
 }
 
 #[derive(Debug)]

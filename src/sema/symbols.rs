@@ -103,16 +103,16 @@ impl SymbolTable {
         Ok(id)
     }
 
-    pub fn define_struct_fields(&mut self, name: &str, fields: Vec<(String, Ty)>) -> Result<StructId, String> {
+    pub fn define_struct_fields(&mut self, name: &str, fields: &[(String, Ty)]) -> Result<StructId, String> {
         let id = *self.struct_ids.get(name)
             .expect("bug: getting struct id has failed, something wrong with pass 1");
 
         let mut map = IndexMap::new();
         for (fname, ty) in fields {
-            if map.contains_key(&fname) {
+            if map.contains_key(fname) {
                 return Err(format!("field `{fname}` is already defined"));
             }
-            map.insert(fname, ty);
+            map.insert(fname.clone(), ty.clone());
         }
 
         self.structs.insert(id, StructSymbol { id, fields: map });

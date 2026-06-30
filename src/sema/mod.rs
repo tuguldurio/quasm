@@ -99,18 +99,18 @@ impl Sema {
                     self.sym_table.define_func(&name, params_ty, ret)
                         .map_err(|msg| self.err(msg, func.name.span))?;
                 }
-                ast::Stmt::Let(s) => {
-                    return Err(self.err("top level should not contain let statement", s.name.span));
-                }
-                ast::Stmt::Type(s) => {
-                    return Err(self.err("not implemented yet", s.name.span));
-                }
                 ast::Stmt::Struct(struc) => {
                     if !struc.ty_params.is_empty() {
                         return Err(self.err("generic structs are not supported yet", struc.name.span));
                     }
                     self.sym_table.define_struct(&struc.name.value)
                         .map_err(|msg| self.err(msg, struc.name.span))?;
+                }
+                ast::Stmt::Let(s) => {
+                    return Err(self.err("top level should not contain let statement", s.name.span));
+                }
+                ast::Stmt::Type(s) => {
+                    return Err(self.err("not implemented yet", s.name.span));
                 }
                 ast::Stmt::Expr(e) => {
                     return Err(self.err("top level should not contain expression", e.span));
@@ -131,23 +131,10 @@ impl Sema {
     fn check_stmt(&mut self, stmt: ast::Stmt) -> Result<tast::Stmt, SemaError> {
         match stmt {
             ast::Stmt::Func(func) => Ok(tast::Stmt::Func(self.check_func(func)?)),
+            ast::Stmt::Struct(struc) => Ok(tast::Stmt::Struct(self.check_struct(struc)?)),
             ast::Stmt::Let(let_stmt) => self.check_let(let_stmt),
             ast::Stmt::Type(type_stmt) => {
                 Err(self.err("not implemented yet", type_stmt.name.span))
-            }
-            ast::Stmt::Struct(struc) => {
-                let mut sym_fields = Vec::new();
-                let mut tast_fields = Vec::new();
-                for (i, field) in struc.fields.into_iter().enumerate() {
-                    let ty = self.resolve_ty(&field.ty)?;
-                    sym_fields.push((field.name.value.clone(), ty.clone()));
-                    tast_fields.push(tast::StructField { id: tast::StructFieldId(i as u64), ty });
-                }
-
-                let id = self.sym_table.define_struct_fields(&struc.name.value, sym_fields)
-                    .map_err(|msg| self.err(msg, struc.name.span))?;
-
-                Ok(tast::Stmt::Struct(tast::Struct { id, fields: tast_fields }))
             }
             ast::Stmt::Expr(expr) => Ok(tast::Stmt::Expr(self.check_expr(expr)?))
         }
@@ -186,6 +173,25 @@ impl Sema {
         })?;
 
         Ok(tast::Func { id, params, ret_ty, body })
+    }
+
+    fn check_struct(&mut self, struc: ast::Struct) -> Result<tast::Struct, SemaError> {
+        let mut fields = Vec::new();
+        for field in struc.fields {
+            let ty = self.resolve_ty(&field.ty)?;
+            fields.push((field.name.value, ty));
+        }
+
+        let id = self.sym_table.define_struct_fields(&struc.name.value, &fields)
+            .map_err(|msg| self.err(msg, struc.name.span))?;
+
+        let tast_fields = fields.iter().enumerate()
+            .map(|(i, (_, ty))| tast::StructField {
+                id: tast::StructFieldId(i as u64),
+                ty: ty.clone()
+            }).collect();
+
+        Ok(tast::Struct { id, fields: tast_fields, ty: Ty::Unit })
     }
 
     fn check_let(&mut self, let_stmt: ast::Let) -> Result<tast::Stmt, SemaError> {
