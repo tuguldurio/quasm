@@ -11,6 +11,9 @@ pub struct FuncId(pub u64);
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub struct StructId(pub u64);
 
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+pub struct StructFieldId(pub u64);
+
 #[derive(Debug)]
 pub struct Program {
     pub stmts: Vec<Stmt>
@@ -41,12 +44,13 @@ pub struct Param {
 #[derive(Debug)]
 pub struct Struct {
     pub id: StructId,
-    fields: Vec<StructField>
+    pub fields: Vec<StructField>
 }
 
 #[derive(Debug)]
-struct StructField {
-    
+pub struct StructField {
+    pub id: StructFieldId,
+    pub ty: Ty
 }
 
 #[derive(Debug)]

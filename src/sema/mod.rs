@@ -106,8 +106,11 @@ impl Sema {
                     return Err(self.err("not implemented yet", s.name.span));
                 }
                 ast::Stmt::Struct(struc) => {
-                    let id = self.sym_table.define_struct(&struc.name.value);
-                    // tast::Struct { id, fields: Vec::new() };
+                    if !struc.ty_params.is_empty() {
+                        return Err(self.err("generic structs are not supported yet", struc.name.span));
+                    }
+                    self.sym_table.define_struct(&struc.name.value)
+                        .map_err(|msg| self.err(msg, struc.name.span))?;
                 }
                 ast::Stmt::Expr(e) => {
                     return Err(self.err("top level should not contain expression", e.span));
@@ -132,8 +135,19 @@ impl Sema {
             ast::Stmt::Type(type_stmt) => {
                 Err(self.err("not implemented yet", type_stmt.name.span))
             }
-            ast::Stmt::Struct(struct_stmt) => {
-                todo!("struct check");
+            ast::Stmt::Struct(struc) => {
+                let mut sym_fields = Vec::new();
+                let mut tast_fields = Vec::new();
+                for (i, field) in struc.fields.into_iter().enumerate() {
+                    let ty = self.resolve_ty(&field.ty)?;
+                    sym_fields.push((field.name.value.clone(), ty.clone()));
+                    tast_fields.push(tast::StructField { id: tast::StructFieldId(i as u64), ty });
+                }
+
+                let id = self.sym_table.define_struct_fields(&struc.name.value, sym_fields)
+                    .map_err(|msg| self.err(msg, struc.name.span))?;
+
+                Ok(tast::Stmt::Struct(tast::Struct { id, fields: tast_fields }))
             }
             ast::Stmt::Expr(expr) => Ok(tast::Stmt::Expr(self.check_expr(expr)?))
         }

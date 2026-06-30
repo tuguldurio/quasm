@@ -17,7 +17,7 @@ pub struct FuncSymbol {
 
 pub struct StructSymbol {
     pub id: StructId,
-    fields: IndexMap<String, Ty>
+    pub fields: IndexMap<String, Ty>
 }
 
 pub struct VarSymbol {
@@ -28,7 +28,7 @@ pub struct VarSymbol {
 pub struct SymbolTable {
     funcs: HashMap<FuncKey, FuncSymbol>,
     struct_ids: HashMap<String, StructId>,
-    structs: Vec<StructSymbol>,
+    structs: HashMap<StructId, StructSymbol>,
     scopes: Vec<HashMap<String, VarSymbol>>,
     local_id: u64
 }
@@ -38,7 +38,7 @@ impl SymbolTable {
         Self {
             funcs: HashMap::new(),
             struct_ids: HashMap::new(),
-            structs: Vec::new(),
+            structs: HashMap::new(),
             scopes: Vec::new(),
             local_id: 0
         }
@@ -98,14 +98,30 @@ impl SymbolTable {
             return Err(format!("struct {name} is already defined"));
         }
 
-        let id = StructId(self.structs.len() as u64);
+        let id = StructId(self.struct_ids.len() as u64);
         self.struct_ids.insert(name.to_string(), id);
         Ok(id)
     }
 
-    // pub fn define_struct_fields(&mut self, fields: &[]) -> Result<(), String> {
+    pub fn define_struct_fields(&mut self, name: &str, fields: Vec<(String, Ty)>) -> Result<StructId, String> {
+        let id = *self.struct_ids.get(name)
+            .expect("bug: getting struct id has failed, something wrong with pass 1");
 
-    // }
+        let mut map = IndexMap::new();
+        for (fname, ty) in fields {
+            if map.contains_key(&fname) {
+                return Err(format!("field `{fname}` is already defined"));
+            }
+            map.insert(fname, ty);
+        }
+
+        self.structs.insert(id, StructSymbol { id, fields: map });
+        Ok(id)
+    }
+
+    pub fn lookup_struct(&self, name: &str) -> Option<StructId> {
+        self.struct_ids.get(name).copied()
+    }
     
     // ----Variable related stuffs----
     pub fn define_var(&mut self, name: &str, ty: Ty) -> Result<VarId, String> {
