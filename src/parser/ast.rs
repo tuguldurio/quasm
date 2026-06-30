@@ -8,15 +8,15 @@ pub struct Program {
 
 #[derive(Debug)]
 pub enum Stmt {
-    Func(FuncStmt),
-    Let(LetStmt),
-    Type(TypeStmt),
-    Struct(StructStmt),
+    Func(Func),
+    Let(Let),
+    Type(Type),
+    Struct(Struct),
     Expr(Expr)
 }
 
 #[derive(Debug)]
-pub struct FuncStmt {
+pub struct Func {
     pub name: Identifier,
     pub params: Vec<Param>,
     pub ret: Option<Ty>,
@@ -30,14 +30,20 @@ pub struct Param {
 }
 
 #[derive(Debug)]
-pub struct LetStmt {
+pub struct Struct {
     pub name: Identifier,
-    pub value: Expr,
-    pub annot_ty: Option<Ty>
+    pub ty_params: Vec<Identifier>,
+    pub fields: Vec<StructField>
 }
 
 #[derive(Debug)]
-pub struct TypeStmt {
+pub struct StructField {
+    pub name: Identifier,
+    pub ty: Ty
+}
+
+#[derive(Debug)]
+pub struct Type {
     pub name: Identifier,
     pub ty_params: Vec<Identifier>,
     pub variants: Vec<TypeVariant>
@@ -50,16 +56,10 @@ pub struct TypeVariant {
 }
 
 #[derive(Debug)]
-pub struct StructStmt {
+pub struct Let {
     pub name: Identifier,
-    pub ty_params: Vec<Identifier>,
-    pub fields: Vec<StructField>
-}
-
-#[derive(Debug)]
-pub struct StructField {
-    pub name: Identifier,
-    pub ty: Ty
+    pub value: Expr,
+    pub annot_ty: Option<Ty>
 }
 
 #[derive(Debug)]

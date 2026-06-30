@@ -73,7 +73,7 @@ impl Sema {
         }
     }
 
-    fn resolve_params_ty(&self, func: &ast::FuncStmt) -> Result<Vec<Ty>, SemaError> {
+    fn resolve_params_ty(&self, func: &ast::Func) -> Result<Vec<Ty>, SemaError> {
         let mut params_ty = Vec::new();
         for param in &func.params {
             let param_ty = match &param.ty {
@@ -139,7 +139,7 @@ impl Sema {
         }
     }
 
-    fn check_func(&mut self, func: ast::FuncStmt) -> Result<tast::FuncStmt, SemaError> {
+    fn check_func(&mut self, func: ast::Func) -> Result<tast::Func, SemaError> {
         // lookup symbol table
         let name = func.name.value;
         let first_param_ty = func.params.first()
@@ -171,10 +171,10 @@ impl Sema {
             format!("type mismatch for function `{}` return type", name)
         })?;
 
-        Ok(tast::FuncStmt { id, params, ret_ty, body })
+        Ok(tast::Func { id, params, ret_ty, body })
     }
 
-    fn check_let(&mut self, let_stmt: ast::LetStmt) -> Result<tast::Stmt, SemaError> {
+    fn check_let(&mut self, let_stmt: ast::Let) -> Result<tast::Stmt, SemaError> {
         let value = self.check_expr(let_stmt.value)?;
 
         let annot_ty = match &let_stmt.annot_ty {

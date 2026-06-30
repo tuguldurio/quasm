@@ -18,14 +18,14 @@ pub struct Program {
 
 #[derive(Debug)]
 pub enum Stmt {
-    Func(FuncStmt),
+    Func(Func),
     Struct(Struct),
     Let(LetStmt),
     Expr(Expr)
 }
 
 #[derive(Debug)]
-pub struct FuncStmt {
+pub struct Func {
     pub id: FuncId,
     pub params: Vec<Param>,
     pub ret_ty: Ty,
