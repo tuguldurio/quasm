@@ -110,7 +110,7 @@ impl Sema {
                     return Err(self.err("top level should not contain let statement", s.name.span));
                 }
                 ast::Stmt::Var(s) => {
-                    return Err(self.err("top level should not contain let statement", s.name.span));
+                    return Err(self.err("top level should not contain var statement", s.name.span));
                 }
                 ast::Stmt::Type(s) => {
                     return Err(self.err("not implemented yet", s.name.span));
