@@ -109,6 +109,9 @@ impl Sema {
                 ast::Stmt::Let(s) => {
                     return Err(self.err("top level should not contain let statement", s.name.span));
                 }
+                ast::Stmt::Var(s) => {
+                    return Err(self.err("top level should not contain let statement", s.name.span));
+                }
                 ast::Stmt::Type(s) => {
                     return Err(self.err("not implemented yet", s.name.span));
                 }
@@ -132,7 +135,8 @@ impl Sema {
         match stmt {
             ast::Stmt::Func(func) => Ok(tast::Stmt::Func(self.check_func(func)?)),
             ast::Stmt::Struct(struc) => Ok(tast::Stmt::Struct(self.check_struct(struc)?)),
-            ast::Stmt::Let(let_stmt) => self.check_let(let_stmt),
+            ast::Stmt::Let(let_stmt) => Ok(tast::Stmt::Let(self.check_let(let_stmt)?)),
+            ast::Stmt::Var(var_stmt) => Ok(tast::Stmt::Var(self.check_var(var_stmt)?)),
             ast::Stmt::Type(type_stmt) => {
                 Err(self.err("not implemented yet", type_stmt.name.span))
             }
@@ -194,7 +198,7 @@ impl Sema {
         Ok(tast::Struct { id, fields: tast_fields, ty: Ty::Unit })
     }
 
-    fn check_let(&mut self, let_stmt: ast::Let) -> Result<tast::Stmt, SemaError> {
+    fn check_let(&mut self, let_stmt: ast::Let) -> Result<tast::Let, SemaError> {
         let value = self.check_expr(let_stmt.value)?;
 
         let annot_ty = match &let_stmt.annot_ty {
@@ -211,7 +215,27 @@ impl Sema {
         let id = self.sym_table.define_var(&let_stmt.name.value, annot_ty.clone())
             .map_err(|msg| self.err(msg, let_stmt.name.span))?;
 
-        Ok(tast::Stmt::Let(tast::LetStmt { id, value, annot_ty, ty: Ty::Unit }))
+        Ok(tast::Let { id, value, annot_ty, ty: Ty::Unit })
+    }
+
+    fn check_var(&mut self, var_stmt: ast::Var) -> Result<tast::Var, SemaError> {
+        let value = self.check_expr(var_stmt.value)?;
+
+        let annot_ty = match &var_stmt.annot_ty {
+            Some(annot) => {
+                let annot_ty = self.resolve_ty(annot)?;
+                self.expect_eq(&annot_ty, &value.ty, var_stmt.name.span, || {
+                    format!("type mismatch for `{}`", var_stmt.name.value)
+                })?;
+                annot_ty
+            }
+            None => value.ty.clone()
+        };
+
+        let id = self.sym_table.define_var(&var_stmt.name.value, annot_ty.clone())
+            .map_err(|msg| self.err(msg, var_stmt.name.span))?;
+
+        Ok(tast::Var { id, value, annot_ty, ty: Ty::Unit })
     }
 
     fn check_expr(&mut self, expr: ast::Expr) -> Result<tast::Expr, SemaError> {

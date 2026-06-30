@@ -9,9 +9,10 @@ pub struct Program {
 #[derive(Debug)]
 pub enum Stmt {
     Func(Func),
-    Let(Let),
-    Type(Type),
     Struct(Struct),
+    Let(Let),
+    Var(Var),
+    Type(Type),
     Expr(Expr)
 }
 
@@ -57,6 +58,13 @@ pub struct TypeVariant {
 
 #[derive(Debug)]
 pub struct Let {
+    pub name: Identifier,
+    pub value: Expr,
+    pub annot_ty: Option<Ty>
+}
+
+#[derive(Debug)]
+pub struct Var {
     pub name: Identifier,
     pub value: Expr,
     pub annot_ty: Option<Ty>

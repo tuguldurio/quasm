@@ -6,10 +6,10 @@ use logos::Logos;
 #[logos(skip(r"//[^\r\n]*", allow_greedy = true))]
 pub enum TokenKind {
     #[token("func")] Func,
-    #[token("let")] Let,
-    #[token("var")] Var,
     #[token("struct")] Struct,
     #[token("type")] Type,
+    #[token("let")] Let,
+    #[token("var")] Var,
     #[token("if")] If,
     #[token("elif")] Elif,
     #[token("else")] Else,

@@ -23,7 +23,8 @@ pub struct Program {
 pub enum Stmt {
     Func(Func),
     Struct(Struct),
-    Let(LetStmt),
+    Let(Let),
+    Var(Var),
     Expr(Expr)
 }
 
@@ -55,7 +56,15 @@ pub struct StructField {
 }
 
 #[derive(Debug)]
-pub struct LetStmt {
+pub struct Let {
+    pub id: VarId,
+    pub value: Expr,
+    pub annot_ty: Ty,
+    pub ty: Ty
+}
+
+#[derive(Debug)]
+pub struct Var {
     pub id: VarId,
     pub value: Expr,
     pub annot_ty: Ty,
