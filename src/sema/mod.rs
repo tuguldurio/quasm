@@ -86,7 +86,7 @@ impl Sema {
     }
 
     fn check_program(&mut self, ast: ast::Program) -> Result<tast::Program, SemaError> {
-        // initial pass to register functions
+        // initial pass to register
         for stmt in &ast.stmts {
             match stmt {
                 ast::Stmt::Func(func) => {
@@ -105,8 +105,9 @@ impl Sema {
                 ast::Stmt::Type(s) => {
                     return Err(self.err("not implemented yet", s.name.span));
                 }
-                ast::Stmt::Struct(s) => {
-                    return Err(self.err("not implemented yet", s.name.span));
+                ast::Stmt::Struct(struc) => {
+                    let id = self.sym_table.define_struct(&struc.name.value);
+                    // tast::Struct { id, fields: Vec::new() };
                 }
                 ast::Stmt::Expr(e) => {
                     return Err(self.err("top level should not contain expression", e.span));
@@ -132,7 +133,7 @@ impl Sema {
                 Err(self.err("not implemented yet", type_stmt.name.span))
             }
             ast::Stmt::Struct(struct_stmt) => {
-                Err(self.err("not implemented yet", struct_stmt.name.span))
+                todo!("struct check");
             }
             ast::Stmt::Expr(expr) => Ok(tast::Stmt::Expr(self.check_expr(expr)?))
         }

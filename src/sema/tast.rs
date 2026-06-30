@@ -19,6 +19,7 @@ pub struct Program {
 #[derive(Debug)]
 pub enum Stmt {
     Func(FuncStmt),
+    Struct(Struct),
     Let(LetStmt),
     Expr(Expr)
 }
@@ -35,6 +36,17 @@ pub struct FuncStmt {
 pub struct Param {
     pub id: VarId,
     pub ty: Ty
+}
+
+#[derive(Debug)]
+pub struct Struct {
+    pub id: StructId,
+    fields: Vec<StructField>
+}
+
+#[derive(Debug)]
+struct StructField {
+    
 }
 
 #[derive(Debug)]

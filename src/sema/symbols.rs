@@ -1,4 +1,5 @@
 use std::collections::HashMap;
+use indexmap::IndexMap;
 use crate::sema::{ty::Ty};
 use crate::sema::tast::{FuncId, StructId, VarId};
 
@@ -16,7 +17,7 @@ pub struct FuncSymbol {
 
 pub struct StructSymbol {
     pub id: StructId,
-    fields: Vec<(String, Ty)>
+    fields: IndexMap<String, Ty>
 }
 
 pub struct VarSymbol {
@@ -25,8 +26,9 @@ pub struct VarSymbol {
 }
 
 pub struct SymbolTable {
-    // symbols: HashMap<>
     funcs: HashMap<FuncKey, FuncSymbol>,
+    struct_ids: HashMap<String, StructId>,
+    structs: Vec<StructSymbol>,
     scopes: Vec<HashMap<String, VarSymbol>>,
     local_id: u64
 }
@@ -35,11 +37,22 @@ impl SymbolTable {
     pub fn new() -> Self {
         Self {
             funcs: HashMap::new(),
+            struct_ids: HashMap::new(),
+            structs: Vec::new(),
             scopes: Vec::new(),
             local_id: 0
         }
     }
 
+    pub fn enter_scope(&mut self) {
+        self.scopes.push(HashMap::new())
+    }
+    
+    pub fn exit_scope(&mut self) {
+        self.scopes.pop();
+    }
+
+    // ----Function related stuffs----
     pub fn define_func(&mut self, name: &str, params_ty: Vec<Ty>, ret_ty: Ty) -> Result<(), String> {
         let key = FuncKey {
             name: name.to_string(),
@@ -64,14 +77,6 @@ impl SymbolTable {
         self.funcs.get(&FuncKey { name: name.to_string(), first_param_ty })
     }
 
-    pub fn enter_scope(&mut self) {
-        self.scopes.push(HashMap::new())
-    }
-    
-    pub fn exit_scope(&mut self) {
-        self.scopes.pop();
-    }
-
     pub fn enter_func(&mut self) {
         self.enter_scope();
         self.local_id = 0;
@@ -87,6 +92,22 @@ impl SymbolTable {
         id
     }
 
+    // ----Struct related stuffs----
+    pub fn define_struct(&mut self, name: &str) -> Result<StructId, String> {
+        if self.struct_ids.contains_key(name) {
+            return Err(format!("struct {name} is already defined"));
+        }
+
+        let id = StructId(self.structs.len() as u64);
+        self.struct_ids.insert(name.to_string(), id);
+        Ok(id)
+    }
+
+    // pub fn define_struct_fields(&mut self, fields: &[]) -> Result<(), String> {
+
+    // }
+    
+    // ----Variable related stuffs----
     pub fn define_var(&mut self, name: &str, ty: Ty) -> Result<VarId, String> {
         let id = self.alloc_local_id();
 
