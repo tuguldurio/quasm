@@ -119,13 +119,13 @@ impl Sema {
         let mut stmts = Vec::new();
 
         for stmt in ast.stmts {
-            stmts.push(self.check_statement(stmt)?);
+            stmts.push(self.check_stmt(stmt)?);
         }
 
         Ok(tast::Program { stmts })
     }
 
-    fn check_statement(&mut self, stmt: ast::Stmt) -> Result<tast::Stmt, SemaError> {
+    fn check_stmt(&mut self, stmt: ast::Stmt) -> Result<tast::Stmt, SemaError> {
         match stmt {
             ast::Stmt::Func(func) => Ok(tast::Stmt::Func(self.check_func(func)?)),
             ast::Stmt::Let(let_stmt) => self.check_let(let_stmt),
@@ -238,7 +238,7 @@ impl Sema {
         self.sym_table.enter_scope();
         let mut stmts = Vec::new();
         for stmt in block.stmts {
-            stmts.push(self.check_statement(stmt)?);
+            stmts.push(self.check_stmt(stmt)?);
         }
         self.sym_table.exit_scope();
 

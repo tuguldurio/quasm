@@ -4,7 +4,7 @@ use super::Parser;
 use super::ParseError;
 
 impl Parser {
-    pub(super) fn parse_statement(&mut self) -> Result<Stmt, ParseError> {
+    pub(super) fn parse_stmt(&mut self) -> Result<Stmt, ParseError> {
         match self.peek() {
             TokenKind::Func => Ok(Stmt::Func(self.parse_func_decl()?)),
             TokenKind::Let => Ok(Stmt::Let(self.parse_let_statement()?)),

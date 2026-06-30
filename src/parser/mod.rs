@@ -32,7 +32,7 @@ impl Parser {
         self.skip_newlines();
 
         while !self.peek_is(TokenKind::Eof) {
-            stmts.push(self.parse_statement()?);
+            stmts.push(self.parse_stmt()?);
             self.skip_newlines();
         }
 
