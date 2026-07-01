@@ -3,6 +3,18 @@ use indexmap::IndexMap;
 use crate::sema::{ty::Ty};
 use crate::sema::tast::{FuncId, StructId, VarId};
 
+// ----helpers----
+fn is_snake_case(name: &str) -> bool {
+    let starts_ok = name.chars().next()
+        .is_some_and(|c| c.is_ascii_lowercase() || c == '_');
+    starts_ok && name.chars().all(|c| c.is_ascii_lowercase() || c.is_ascii_digit() || c == '_')
+}
+
+fn is_pascal_case(name: &str) -> bool {
+    let starts_ok = name.chars().next().is_some_and(|c| c.is_ascii_uppercase());
+    starts_ok && name.chars().all(|c| c.is_ascii_alphanumeric())
+}
+
 #[derive(PartialEq, Eq, Hash)]
 struct FuncKey {
     name: String,
@@ -25,6 +37,7 @@ pub struct VarSymbol {
     pub ty: Ty
 }
 
+// ----Symbol Table----
 pub struct SymbolTable {
     funcs: HashMap<FuncKey, FuncSymbol>,
     struct_ids: HashMap<String, StructId>,
@@ -127,8 +140,12 @@ impl SymbolTable {
         Ok(id)
     }
 
-    pub fn lookup_struct(&self, name: &str) -> Option<StructId> {
+    fn lookup_struct_id(&self, name: &str) -> Option<StructId> {
         self.struct_ids.get(name).copied()
+    }
+
+    pub fn lookup_struct(&self, name: &str) -> Option<&StructSymbol> {
+        self.structs.get(&self.lookup_struct_id(name)?)
     }
     
     // ----Variable related stuffs----
@@ -153,18 +170,4 @@ impl SymbolTable {
     pub fn lookup_var(&self, name: &str) -> Option<&VarSymbol> {
         self.scopes.iter().rev().find_map(|scope| scope.get(name))
     }
-}
-
-// snake_case: starts with a lowercase letter or underscore, then only
-// lowercase letters, digits, and underscores.
-fn is_snake_case(name: &str) -> bool {
-    let starts_ok = name.chars().next()
-        .is_some_and(|c| c.is_ascii_lowercase() || c == '_');
-    starts_ok && name.chars().all(|c| c.is_ascii_lowercase() || c.is_ascii_digit() || c == '_')
-}
-
-// PascalCase: starts with an uppercase letter, then only alphanumerics.
-fn is_pascal_case(name: &str) -> bool {
-    let starts_ok = name.chars().next().is_some_and(|c| c.is_ascii_uppercase());
-    starts_ok && name.chars().all(|c| c.is_ascii_alphanumeric())
 }

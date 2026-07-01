@@ -86,19 +86,10 @@ impl Sema {
     }
 
     fn check_program(&mut self, ast: ast::Program) -> Result<tast::Program, SemaError> {
-        // initial pass to register
+        // pass 1: register struct names, reject invalid top level statements
         for stmt in &ast.stmts {
             match stmt {
-                ast::Stmt::Func(func) => {
-                    let name = func.name.value.clone();
-                    let params_ty = self.resolve_params_ty(func)?;
-                    let ret = match &func.ret {
-                        Some(ret) => self.resolve_ty(ret)?,
-                        None => Ty::Unit
-                    };
-                    self.sym_table.define_func(&name, params_ty, ret)
-                        .map_err(|msg| self.err(msg, func.name.span))?;
-                }
+                ast::Stmt::Func(_) => {}
                 ast::Stmt::Struct(struc) => {
                     if !struc.ty_params.is_empty() {
                         return Err(self.err("generic structs are not supported yet", struc.name.span));
@@ -121,7 +112,33 @@ impl Sema {
             }
         }
 
-        // second pass to build tast
+        // pass 2: resolve func signatures and struct fields
+        for stmt in &ast.stmts {
+            match stmt {
+                ast::Stmt::Func(func) => {
+                    let name = func.name.value.clone();
+                    let params_ty = self.resolve_params_ty(func)?;
+                    let ret = match &func.ret {
+                        Some(ret) => self.resolve_ty(ret)?,
+                        None => Ty::Unit
+                    };
+                    self.sym_table.define_func(&name, params_ty, ret)
+                        .map_err(|msg| self.err(msg, func.name.span))?;
+                }
+                ast::Stmt::Struct(struc) => {
+                    let mut fields = Vec::new();
+                    for field in &struc.fields {
+                        let ty = self.resolve_ty(&field.ty)?;
+                        fields.push((field.name.value.clone(), ty));
+                    }
+                    self.sym_table.define_struct_fields(&struc.name.value, &fields)
+                        .map_err(|msg| self.err(msg, struc.name.span))?;
+                }
+                _ => {}
+            }
+        }
+
+        // pass 3: build tast
         let mut stmts = Vec::new();
 
         for stmt in ast.stmts {
@@ -180,22 +197,17 @@ impl Sema {
     }
 
     fn check_struct(&mut self, struc: ast::Struct) -> Result<tast::Struct, SemaError> {
-        let mut fields = Vec::new();
-        for field in struc.fields {
-            let ty = self.resolve_ty(&field.ty)?;
-            fields.push((field.name.value, ty));
-        }
+        let symbol = self.sym_table.lookup_struct(&struc.name.value)
+            .expect("bug: struct fields were not resolved in pass 1 and 2");
+        let id = symbol.id;
 
-        let id = self.sym_table.define_struct_fields(&struc.name.value, &fields)
-            .map_err(|msg| self.err(msg, struc.name.span))?;
-
-        let tast_fields = fields.iter().enumerate()
-            .map(|(i, (_, ty))| tast::StructField {
+        let fields = symbol.fields.values().enumerate()
+            .map(|(i, ty)| tast::StructField {
                 id: tast::StructFieldId(i as u64),
                 ty: ty.clone()
             }).collect();
 
-        Ok(tast::Struct { id, fields: tast_fields, ty: Ty::Unit })
+        Ok(tast::Struct { id, fields, ty: Ty::Unit })
     }
 
     fn check_let(&mut self, let_stmt: ast::Let) -> Result<tast::Let, SemaError> {
@@ -267,11 +279,7 @@ impl Sema {
                 let ty = binaryop.ty.clone();
                 Ok(tast::Expr { kind: tast::ExprKind::BinaryOp(binaryop), ty })
             }
-            ast::ExprKind::Call(call) => {
-                let call = self.check_call(call)?;
-                let ty = call.ty.clone();
-                Ok(tast::Expr { kind: tast::ExprKind::Call(call), ty })
-            }
+            ast::ExprKind::Call(call) => self.check_call(call),
             _ => Ok(tast::Expr { kind: tast::ExprKind::Error, ty: Ty::Unit })
         }
     }
@@ -310,7 +318,9 @@ impl Sema {
         Ok(tast::BinaryOp { op: binaryop.op, left: Box::new(left), right: Box::new(right), ty })
     }
 
-    fn check_call(&mut self, call: ast::Call) -> Result<tast::Call, SemaError> {
+    fn check_call(&mut self, call: ast::Call) -> Result<tast::Expr, SemaError> {
+        let span = call.callee.span;
+
         let mut args = Vec::new();
         for arg in call.args {
             args.push(self.check_expr(arg)?);
@@ -318,8 +328,14 @@ impl Sema {
 
         match call.callee.kind {
             ast::ExprKind::Identifier(identifier) => {
-                // lookup symbol table
                 let name = identifier.value;
+
+                // PascalCase names resolve to struct literal
+                if self.sym_table.lookup_struct(&name).is_some() {
+                    return self.check_struct_lit(&name, args, span);
+                }
+
+                // otherwise it's a function call
                 let first_param_ty = args.first().map(|arg| arg.ty.clone());
 
                 let Some(func_symbol) = self.sym_table.lookup_func(&name, first_param_ty) else {
@@ -332,19 +348,19 @@ impl Sema {
                 let params_ty = func_symbol.params_ty.clone();
                 let ret_ty = func_symbol.ret_ty.clone();
 
-                // validate params 
+                // validate params
                 if args.len() != params_ty.len() {
                     return Err(self.err(
                         format!(
                             "function `{}` expects {} argument(s), got {}",
                             name, params_ty.len(), args.len()
                         ),
-                        call.callee.span
+                        span
                     ));
                 }
 
                 for (arg, param_ty) in args.iter().zip(&params_ty) {
-                    self.expect_eq(param_ty, &arg.ty, call.callee.span, || {
+                    self.expect_eq(param_ty, &arg.ty, span, || {
                         format!("type mismatch in call to `{}`", name)
                     })?;
                 }
@@ -355,11 +371,44 @@ impl Sema {
                     ty: Ty::Func { params: params_ty, ret: Box::new(ret_ty.clone()) }
                 };
 
-                Ok(tast::Call { callee: Box::new(callee), args, ty: ret_ty })
+                Ok(tast::Expr {
+                    kind: tast::ExprKind::Call(tast::Call {
+                        callee: Box::new(callee), args, ty: ret_ty.clone()
+                    }),
+                    ty: ret_ty
+                })
             },
             _ => {
-                Err(self.err("only call on identifier is supported", call.callee.span))
+                Err(self.err("only call on identifier is supported", span))
             }
         }
+    }
+
+    fn check_struct_lit(&self, name: &str, args: Vec<tast::Expr>, span: Span) -> Result<tast::Expr, SemaError> {
+        let struct_symbol = self.sym_table.lookup_struct(name)
+            .expect("bug: struct doesn't exist on sym table");
+        let id = struct_symbol.id;
+        let field_tys: Vec<Ty> = struct_symbol.fields.values().cloned().collect();
+
+        if args.len() != field_tys.len() {
+            return Err(self.err(
+                format!(
+                    "struct `{}` expects {} field(s), got {}",
+                    name, field_tys.len(), args.len()
+                ),
+                span
+            ));
+        }
+
+        for (arg, field_ty) in args.iter().zip(&field_tys) {
+            self.expect_eq(field_ty, &arg.ty, span, || {
+                format!("type mismatch in struct literal `{}`", name)
+            })?;
+        }
+
+        Ok(tast::Expr {
+            kind: tast::ExprKind::StructLit(tast::StructLit { id, fields: args, ty: Ty::Struct(id) }),
+            ty: Ty::Struct(id)
+        })
     }
 }

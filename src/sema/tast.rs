@@ -56,6 +56,13 @@ pub struct StructField {
 }
 
 #[derive(Debug)]
+pub struct StructLit {
+    pub id: StructId,
+    pub fields: Vec<Expr>,
+    pub ty: Ty
+}
+
+#[derive(Debug)]
 pub struct Let {
     pub id: VarId,
     pub value: Expr,
@@ -89,6 +96,7 @@ pub enum ExprKind {
         operand: Box<Expr>
     },
     Call(Call),
+    StructLit(StructLit),
     // stands in for an expression that failed to check or isn't supported yet
     Error
 }
