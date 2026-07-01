@@ -54,6 +54,10 @@ impl SymbolTable {
 
     // ----Function related stuffs----
     pub fn define_func(&mut self, name: &str, params_ty: Vec<Ty>, ret_ty: Ty) -> Result<(), String> {
+        if !is_snake_case(name) {
+            return Err(format!("function `{name}` must be snake_case"));
+        }
+
         let key = FuncKey {
             name: name.to_string(),
             first_param_ty: params_ty.first().cloned()
@@ -94,6 +98,10 @@ impl SymbolTable {
 
     // ----Struct related stuffs----
     pub fn define_struct(&mut self, name: &str) -> Result<StructId, String> {
+        if !is_pascal_case(name) {
+            return Err(format!("struct `{name}` must be PascalCase"));
+        }
+
         if self.struct_ids.contains_key(name) {
             return Err(format!("struct {name} is already defined"));
         }
@@ -125,6 +133,10 @@ impl SymbolTable {
     
     // ----Variable related stuffs----
     pub fn define_var(&mut self, name: &str, ty: Ty) -> Result<VarId, String> {
+        if !is_snake_case(name) {
+            return Err(format!("variable `{name}` must be snake_case"));
+        }
+
         let id = self.alloc_local_id();
 
         let scope = self.scopes.last_mut()
@@ -141,4 +153,18 @@ impl SymbolTable {
     pub fn lookup_var(&self, name: &str) -> Option<&VarSymbol> {
         self.scopes.iter().rev().find_map(|scope| scope.get(name))
     }
+}
+
+// snake_case: starts with a lowercase letter or underscore, then only
+// lowercase letters, digits, and underscores.
+fn is_snake_case(name: &str) -> bool {
+    let starts_ok = name.chars().next()
+        .is_some_and(|c| c.is_ascii_lowercase() || c == '_');
+    starts_ok && name.chars().all(|c| c.is_ascii_lowercase() || c.is_ascii_digit() || c == '_')
+}
+
+// PascalCase: starts with an uppercase letter, then only alphanumerics.
+fn is_pascal_case(name: &str) -> bool {
+    let starts_ok = name.chars().next().is_some_and(|c| c.is_ascii_uppercase());
+    starts_ok && name.chars().all(|c| c.is_ascii_alphanumeric())
 }
