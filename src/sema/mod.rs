@@ -73,7 +73,7 @@ impl Sema {
         }
     }
 
-    fn resolve_params_ty(&self, func: &ast::Func) -> Result<Vec<Ty>, SemaError> {
+    fn resolve_func_params_ty(&self, func: &ast::Func) -> Result<Vec<Ty>, SemaError> {
         let mut params_ty = Vec::new();
         for param in &func.params {
             let param_ty = match &param.ty {
@@ -117,7 +117,7 @@ impl Sema {
             match stmt {
                 ast::Stmt::Func(func) => {
                     let name = func.name.value.clone();
-                    let params_ty = self.resolve_params_ty(func)?;
+                    let params_ty = self.resolve_func_params_ty(func)?;
                     let ret = match &func.ret {
                         Some(ret) => self.resolve_ty(ret)?,
                         None => Ty::Unit
