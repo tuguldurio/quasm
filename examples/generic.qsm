@@ -1,5 +1,9 @@
 // Generic types
 // generic types are denoted by lowercase type names
+// TODO: Need to resolve namespace issues
+// for example Just and None is accesible in this example
+// but it shouldn't be. It should be accesible via Maybe.Just and Maybe.None
+// But syntax would look like this example if later import is implemented
 
 type Maybe(a) {
     Just(a)
