@@ -88,7 +88,9 @@ pub enum ExprKind {
         operand: Box<Expr>
     },
     Call(Call),
-    UfcsCall {
+    // `base.name(args)`. sema decides UFCS call or variant constructor
+    // Never calls a stored field. But if we want to it should be: `(base.name)(args)`
+    DotCall {
         base: Box<Expr>,
         callee: Identifier,
         args: Vec<Expr>
@@ -97,9 +99,10 @@ pub enum ExprKind {
         base: Box<Expr>,
         index: Box<Expr>
     },
-    FieldAccess {
+    // `base.name` sema decides: struct field or variant reference
+    DotAccess {
         base: Box<Expr>,
-        field: Identifier
+        name: Identifier
     },
     If {
         condition: Box<Expr>,
