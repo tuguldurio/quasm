@@ -26,7 +26,7 @@ impl Sema {
     fn new() -> Self {
         Self {
             sym_table: SymbolTable::new()
-         }
+        }
     }
 
     fn err(&self, message: impl Into<String>, span: Span) -> SemaError {
@@ -150,8 +150,8 @@ impl Sema {
 
     fn check_stmt(&mut self, stmt: ast::Stmt) -> Result<tast::Stmt, SemaError> {
         match stmt {
-            ast::Stmt::Func(func) => Ok(tast::Stmt::Func(self.check_func(func)?)),
-            ast::Stmt::Struct(struc) => Ok(tast::Stmt::Struct(self.check_struct(struc)?)),
+            ast::Stmt::Func(func) => Ok(tast::Stmt::Func(self.check_func_decl(func)?)),
+            ast::Stmt::Struct(struc) => Ok(tast::Stmt::Struct(self.check_struct_decl(struc)?)),
             ast::Stmt::Let(let_stmt) => Ok(tast::Stmt::Let(self.check_let(let_stmt)?)),
             ast::Stmt::Var(var_stmt) => Ok(tast::Stmt::Var(self.check_var(var_stmt)?)),
             ast::Stmt::Type(type_stmt) => {
@@ -161,7 +161,7 @@ impl Sema {
         }
     }
 
-    fn check_func(&mut self, func: ast::Func) -> Result<tast::Func, SemaError> {
+    fn check_func_decl(&mut self, func: ast::Func) -> Result<tast::Func, SemaError> {
         // lookup symbol table
         let name = func.name.value;
         let first_param_ty = func.params.first()
@@ -196,7 +196,7 @@ impl Sema {
         Ok(tast::Func { id, params, ret_ty, body })
     }
 
-    fn check_struct(&mut self, struc: ast::Struct) -> Result<tast::Struct, SemaError> {
+    fn check_struct_decl(&mut self, struc: ast::Struct) -> Result<tast::Struct, SemaError> {
         let symbol = self.sym_table.lookup_struct(&struc.name.value)
             .expect("bug: struct fields were not resolved in pass 1 and 2");
         let id = symbol.id;
