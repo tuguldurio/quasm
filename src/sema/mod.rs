@@ -272,7 +272,7 @@ impl Sema {
                         identifier.span
                     ));
                 };
-                Ok(tast::Expr { kind: tast::ExprKind::VarRef(tast::VarRef{id: var_symbol.id}), ty: var_symbol.ty.clone() })
+                Ok(tast::Expr { kind: tast::ExprKind::VarRef(var_symbol.id), ty: var_symbol.ty.clone() })
             }
             ast::ExprKind::BinaryOp(binaryop) => {
                 let binaryop = self.check_binaryop(binaryop)?;
@@ -367,7 +367,7 @@ impl Sema {
 
                 // build tast
                 let callee = tast::Expr {
-                    kind: tast::ExprKind::FuncRef(tast::FuncRef { id }) ,
+                    kind: tast::ExprKind::FuncRef(id) ,
                     ty: Ty::Func { params: params_ty, ret: Box::new(ret_ty.clone()) }
                 };
 

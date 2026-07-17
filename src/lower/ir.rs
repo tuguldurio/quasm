@@ -2,19 +2,15 @@
 // todo: decide IR design
 #![allow(unused)]
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
-pub struct LocalId(pub u64);
+use crate::common::ast::{BinOpKind, UnaryOpKind};
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
-pub struct FuncId(pub u64);
-
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
-pub struct TypeId(pub u64);
+pub type LocalId = u64;
+pub type FuncId = u64;
+pub type TypeId = u64;
 
 #[derive(Debug)]
 pub struct Module {
     pub heap_types: Vec<HeapType>,
-    // pub types: Vec<IrType>,
     pub funcs: Vec<Func>,
     pub entry: Option<FuncId>
 }
@@ -29,14 +25,14 @@ pub enum IrTy {
 
 #[derive(Debug)]
 pub enum HeapType {
-    Struct { fields: Vec<IrTy> },
-    EnumHeader { variants: Vec<TypeId> }
+    Struct { fields: Vec<IrTy> }
 }
 
 #[derive(Debug)]
 pub struct Func {
     pub id: FuncId,
     pub params: Vec<Param>,
+    pub locals: Vec<IrTy>,
     pub ret_ty: IrTy,
     pub body: Expr
 }
@@ -59,20 +55,23 @@ pub enum ExprKind {
     ConstFloat(f64),
     ConstBool(bool),
     Unit,
-
     LocalGet(LocalId),
     LocalSet { id: LocalId, value: Box<Expr> },
-    Let { id: LocalId, value: Box<Expr> },
-
+    Binary { op: BinOpKind, left: Box<Expr>, right: Box<Expr> },
+    Unary { op: UnaryOpKind, operand: Box<Expr> },
     Block(Vec<Expr>),
-
-    Call { func: FuncId, args: Vec<Expr> },
+    Call(Call),
     FuncRef(FuncId),
-
     StructNew { ty: TypeId, fields: Vec<Expr> },
     StructGet {
         obj: Box<Expr>,
         ty: TypeId,
         field: u64
     }
+}
+
+#[derive(Debug)]
+pub struct Call {
+    pub func: FuncId,
+    pub args: Vec<Expr>
 }

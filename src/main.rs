@@ -1,5 +1,5 @@
 use clap::Parser as ClapParser;
-use quasm::{lexer, parser, sema};
+use quasm::{lexer, parser, sema, lower};
 use std::{fs, path::PathBuf};
 
 #[derive(ClapParser)]
@@ -47,7 +47,7 @@ fn main() {
         }
     };
 
-    match sema::check(ast) {
+    let tast = match sema::check(ast) {
         Ok(tast) => {
             if args.debug { write_debug("tast.txt", &format!("{:#?}", tast)); }
             tast
@@ -58,5 +58,6 @@ fn main() {
         }
     };
 
-    
+    let ir = lower::lower(tast);
+    if args.debug { write_debug("ir.txt", &format!("{:#?}", ir)); }
 }

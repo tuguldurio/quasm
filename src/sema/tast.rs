@@ -80,28 +80,15 @@ pub struct Expr {
 #[derive(Debug)]
 pub enum ExprKind {
     Literal(Literal),
-    VarRef(VarRef),
-    FuncRef(FuncRef),
+    VarRef(VarId),
+    FuncRef(FuncId),
     Block(Block),
     BinaryOp(BinaryOp),
-    UnaryOp {
-        op: UnaryOpKind,
-        operand: Box<Expr>
-    },
+    UnaryOp(UnaryOp),
     Call(Call),
     StructLit(StructLit),
     // stands in for an expression that failed to check or isn't supported yet
     Error
-}
-
-#[derive(Debug)]
-pub struct VarRef {
-    pub id: VarId
-}
-
-#[derive(Debug)]
-pub struct FuncRef {
-    pub id: FuncId
 }
 
 #[derive(Debug)]
@@ -117,6 +104,12 @@ pub struct BinaryOp {
     pub left: Box<Expr>,
     pub right: Box<Expr>,
     pub ty: Ty
+}
+
+#[derive(Debug)]
+pub struct UnaryOp {
+    pub op: UnaryOpKind,
+    pub operand: Box<Expr>
 }
 
 #[derive(Debug)]
