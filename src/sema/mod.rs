@@ -203,7 +203,7 @@ impl Sema {
 
         let fields = symbol.fields.values().enumerate()
             .map(|(i, ty)| tast::StructField {
-                id: tast::StructFieldId(i as u64),
+                id: i as tast::StructFieldId,
                 ty: ty.clone()
             }).collect();
 
@@ -213,7 +213,7 @@ impl Sema {
     fn check_let(&mut self, let_stmt: ast::Let) -> Result<tast::Let, SemaError> {
         let value = self.check_expr(let_stmt.value)?;
 
-        let annot_ty = match &let_stmt.annot_ty {
+        let value_ty = match &let_stmt.annot_ty {
             Some(annot) => {
                 let annot_ty = self.resolve_ty(annot)?;
                 self.expect_eq(&annot_ty, &value.ty, let_stmt.name.span, || {
@@ -224,16 +224,16 @@ impl Sema {
             None => value.ty.clone()
         };
 
-        let id = self.sym_table.define_var(&let_stmt.name.value, annot_ty.clone())
+        let id = self.sym_table.define_var(&let_stmt.name.value, value_ty.clone())
             .map_err(|msg| self.err(msg, let_stmt.name.span))?;
 
-        Ok(tast::Let { id, value, annot_ty, ty: Ty::Unit })
+        Ok(tast::Let { id, value, value_ty, ty: Ty::Unit })
     }
 
     fn check_var(&mut self, var_stmt: ast::Var) -> Result<tast::Var, SemaError> {
         let value = self.check_expr(var_stmt.value)?;
 
-        let annot_ty = match &var_stmt.annot_ty {
+        let value_ty = match &var_stmt.annot_ty {
             Some(annot) => {
                 let annot_ty = self.resolve_ty(annot)?;
                 self.expect_eq(&annot_ty, &value.ty, var_stmt.name.span, || {
@@ -244,10 +244,10 @@ impl Sema {
             None => value.ty.clone()
         };
 
-        let id = self.sym_table.define_var(&var_stmt.name.value, annot_ty.clone())
+        let id = self.sym_table.define_var(&var_stmt.name.value, value_ty.clone())
             .map_err(|msg| self.err(msg, var_stmt.name.span))?;
 
-        Ok(tast::Var { id, value, annot_ty, ty: Ty::Unit })
+        Ok(tast::Var { id, value, value_ty, ty: Ty::Unit })
     }
 
     fn check_expr(&mut self, expr: ast::Expr) -> Result<tast::Expr, SemaError> {
@@ -272,7 +272,7 @@ impl Sema {
                         identifier.span
                     ));
                 };
-                Ok(tast::Expr { kind: tast::ExprKind::Var { id: var_symbol.id }, ty: var_symbol.ty.clone() })
+                Ok(tast::Expr { kind: tast::ExprKind::VarRef(tast::VarRef{id: var_symbol.id}), ty: var_symbol.ty.clone() })
             }
             ast::ExprKind::BinaryOp(binaryop) => {
                 let binaryop = self.check_binaryop(binaryop)?;
@@ -367,7 +367,7 @@ impl Sema {
 
                 // build tast
                 let callee = tast::Expr {
-                    kind: tast::ExprKind::Func { id },
+                    kind: tast::ExprKind::FuncRef(tast::FuncRef { id }) ,
                     ty: Ty::Func { params: params_ty, ret: Box::new(ret_ty.clone()) }
                 };
 

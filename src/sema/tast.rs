@@ -2,17 +2,10 @@ use crate::common::ast::{Literal, BinOpKind, UnaryOpKind};
 use crate::sema::ty::Ty;
 use crate::common::span::Span;
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
-pub struct VarId(pub u64);
-
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
-pub struct FuncId(pub u64);
-
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
-pub struct StructId(pub u64);
-
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
-pub struct StructFieldId(pub u64);
+pub type VarId = u64;
+pub type FuncId = u64;
+pub type StructId = u64;
+pub type StructFieldId = u64;
 
 #[derive(Debug)]
 pub struct Program {
@@ -66,7 +59,7 @@ pub struct StructLit {
 pub struct Let {
     pub id: VarId,
     pub value: Expr,
-    pub annot_ty: Ty,
+    pub value_ty: Ty,
     pub ty: Ty
 }
 
@@ -74,7 +67,7 @@ pub struct Let {
 pub struct Var {
     pub id: VarId,
     pub value: Expr,
-    pub annot_ty: Ty,
+    pub value_ty: Ty,
     pub ty: Ty
 }
 
@@ -87,8 +80,8 @@ pub struct Expr {
 #[derive(Debug)]
 pub enum ExprKind {
     Literal(Literal),
-    Var { id: VarId },
-    Func { id: FuncId },
+    VarRef(VarRef),
+    FuncRef(FuncRef),
     Block(Block),
     BinaryOp(BinaryOp),
     UnaryOp {
@@ -99,6 +92,16 @@ pub enum ExprKind {
     StructLit(StructLit),
     // stands in for an expression that failed to check or isn't supported yet
     Error
+}
+
+#[derive(Debug)]
+pub struct VarRef {
+    pub id: VarId
+}
+
+#[derive(Debug)]
+pub struct FuncRef {
+    pub id: FuncId
 }
 
 #[derive(Debug)]

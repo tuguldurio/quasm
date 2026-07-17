@@ -84,7 +84,7 @@ impl SymbolTable {
             return Err(format!("function {signature} is already defined"));
         }
 
-        let id = FuncId(self.funcs.len() as u64);
+        let id = self.funcs.len() as FuncId;
 
         self.funcs.insert(key, FuncSymbol { id, params_ty, ret_ty });
         Ok(())
@@ -104,7 +104,7 @@ impl SymbolTable {
     }
 
     fn alloc_local_id(&mut self) -> VarId {
-        let id = VarId(self.local_id);
+        let id = self.local_id as VarId;
         self.local_id += 1;
         id
     }
@@ -119,7 +119,7 @@ impl SymbolTable {
             return Err(format!("struct {name} is already defined"));
         }
 
-        let id = StructId(self.struct_ids.len() as u64);
+        let id = self.struct_ids.len() as StructId;
         self.struct_ids.insert(name.to_string(), id);
         Ok(id)
     }
