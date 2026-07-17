@@ -1,5 +1,5 @@
 use clap::Parser as ClapParser;
-use quasm::{lexer, parser, sema, lower};
+use quasm::{lexer, parser, sema, lower, codegen};
 use std::{fs, path::PathBuf};
 
 #[derive(ClapParser)]
@@ -60,4 +60,6 @@ fn main() {
 
     let ir = lower::lower(tast);
     if args.debug { write_debug("ir.txt", &format!("{:#?}", ir)); }
+
+    let _wasm = codegen::generate(ir);
 }
