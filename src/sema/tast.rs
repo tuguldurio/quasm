@@ -9,7 +9,8 @@ pub type StructFieldId = u64;
 
 #[derive(Debug)]
 pub struct Program {
-    pub stmts: Vec<Stmt>
+    pub stmts: Vec<Stmt>,
+    pub entry: Option<FuncId>
 }
 
 #[derive(Debug)]

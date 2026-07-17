@@ -47,7 +47,7 @@ impl Lower {
         ir::Module {
             heap_types: vec![],
             funcs,
-            entry: None
+            entry: tast.entry
         }
     }
 

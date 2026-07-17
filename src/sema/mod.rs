@@ -145,7 +145,9 @@ impl Sema {
             stmts.push(self.check_stmt(stmt)?);
         }
 
-        Ok(tast::Program { stmts })
+        let entry = self.sym_table.lookup_func("main", None).map(|func| func.id);
+
+        Ok(tast::Program { stmts, entry })
     }
 
     fn check_stmt(&mut self, stmt: ast::Stmt) -> Result<tast::Stmt, SemaError> {
